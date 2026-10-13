@@ -1,0 +1,27 @@
+# Delivery roadmap
+
+## Completed
+
+- [x] Android/Web scaffold and feature-first project structure
+- [x] Shared Material theme and adaptive discovery layout
+- [x] Repository-backed job search, work-mode filters, session bookmarks and job details
+- [x] Initial domain/widget checks and Flutter CI
+
+## Next milestones
+
+1. Named routes and account screens with form validation.
+2. Firebase configuration, emulator setup and Authentication integration.
+3. FastAPI health endpoint, Firebase token verification and permission checks.
+4. Seeker profiles, company profiles and server-managed recruiter approval.
+5. Firestore job repository, scoped rules, indexes and job publishing.
+6. Private resume upload, durable parsing tasks and skill confirmation.
+7. Versioned skill-match scoring with evidence and missing skills.
+8. Applications, resume snapshots and recruiter status management.
+9. Admin moderation, audit events and deletion workflows.
+10. Parser evaluation, performance profiling, production deployment and portfolio demo.
+
+Each milestone can span several commits. Prefer a small verified feature over an arbitrary file count. Do not publish unfinished features as completed.
+
+## Integration prerequisites
+
+Firebase development/production project IDs and client configuration, Storage billing setup, and Render deployment access will be needed before live integration. Request them at the appropriate milestone. Never put service-account credentials in a client or repository.
