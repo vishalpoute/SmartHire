@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/routing/app_routes.dart';
 import '../domain/job.dart';
 import 'jobs_cubit.dart';
 import 'widgets/job_card.dart';
@@ -249,6 +250,12 @@ class _Header extends StatelessWidget {
           'Preview',
           style: TextStyle(fontSize: 12, color: Color(0xFF756336)),
         ),
+      ),
+      const SizedBox(width: 8),
+      IconButton(
+        tooltip: 'Sign in',
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.signIn),
+        icon: const Icon(Icons.person_outline),
       ),
     ],
   );

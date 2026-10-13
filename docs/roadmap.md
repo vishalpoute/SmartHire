@@ -6,11 +6,12 @@
 - [x] Shared Material theme and adaptive discovery layout
 - [x] Repository-backed job search, work-mode filters, session bookmarks and job details
 - [x] Initial domain/widget checks and Flutter CI
+- [x] Named routes, responsive sign-in/register/reset previews and form validation
 
 ## Next milestones
 
-1. Named routes and account screens with form validation.
-2. Firebase configuration, emulator setup and Authentication integration.
+1. Firebase configuration, emulator setup and Authentication integration.
+2. Connect account forms to Firebase with session state and route guards.
 3. FastAPI health endpoint, Firebase token verification and permission checks.
 4. Seeker profiles, company profiles and server-managed recruiter approval.
 5. Firestore job repository, scoped rules, indexes and job publishing.

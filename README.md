@@ -6,6 +6,8 @@ A Flutter job portal for Android and Web with explainable resume-to-job skill ma
 
 The first milestone delivers a responsive job-discovery preview: search by title, skill, company or city, filter by work mode, save roles for the current session and open job details. All listings are fictional fixtures. Authentication, persistent saved jobs, applications and resume processing are upcoming work.
 
+The account icon opens responsive sign-in, registration and password-reset previews. Forms validate email, name and passwords, including confirmation. Registration offers seeker/recruiter intent; recruiter publishing will require server approval. Account actions currently validate locally and clearly state that no account is created or reset email sent. Firebase connection is the next milestone.
+
 ## Run locally
 
 Requires Flutter 3.47.2 / Dart 3.13.2 (the initial tested toolchain).
