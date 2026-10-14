@@ -2,6 +2,8 @@
 
 The Flutter client now includes Firebase Core and Authentication dependencies and an explicit startup configuration boundary. Account actions remain previews until their repository/session integration is delivered.
 
+The authentication repository implements sign-in, signup, password-reset requests, verification requests and sign-out. Session state follows Firebase user changes and clears user data on stream failure. Action state prevents duplicate in-flight requests, supports retries, hides unexpected diagnostics and separates signup from verification-email delivery so a mail failure cannot misreport account creation. Controlled test doubles verify these behaviors without touching a live Firebase project. Form wiring, registered-client configuration and live/emulator integration checks remain pending.
+
 ## Configuration
 
 Copy `apps/flutter_app/config/firebase.example.json` to `firebase.local.json` in the same folder. Fill values from the actual registered Firebase app's client configuration. Use separate files for Android and Web if their app IDs differ. Never insert an Admin SDK service-account key into a Flutter build.

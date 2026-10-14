@@ -8,6 +8,7 @@
 - [x] Initial domain/widget checks and Flutter CI
 - [x] Named routes, responsive sign-in/register/reset previews and form validation
 - [x] Firebase dependency/bootstrap boundary, example client configuration and restrictive emulator rule scaffold
+- [x] Firebase authentication repository and tested session/action state, ready for form integration
 
 ## Next milestones
 
