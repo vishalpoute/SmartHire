@@ -28,6 +28,8 @@ flutter build web --release
 
 ## Structure
 
+Firebase initialization and local emulator configuration are scaffolded. See `docs/firebase-setup.md` for build-time client configuration and remaining integration work. Default builds continue to use the sample preview.
+
 `apps/flutter_app/lib/core` holds the shared theme. Each feature has domain, data and presentation layers. The jobs repository interface separates the UI from its current fixtures; a Firestore adapter can replace it without moving data access into widgets. Feature state uses BLoC/Cubit and repository injection.
 
 `services/api` will contain the FastAPI service; `firebase` will hold access rules and indexes as integration is added. See `docs/roadmap.md` for implementation order.

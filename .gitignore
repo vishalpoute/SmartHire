@@ -16,3 +16,8 @@
 **/firebase_options.dart
 **/service-account*.json
 .work-state/
+apps/flutter_app/config/firebase.local.json
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/

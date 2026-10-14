@@ -5,6 +5,8 @@ version: 0.1.0+1
 environment:
   sdk: ^3.13.2
 dependencies:
+  firebase_auth: ^6.7.0
+  firebase_core: ^4.15.0
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1

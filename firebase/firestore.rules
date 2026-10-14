@@ -1,0 +1,7 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Open only explicit, tested paths as each data feature is implemented.
+    match /{document=**} { allow read, write: if false; }
+  }
+}
