@@ -20,5 +20,6 @@ abstract interface class AuthRepository {
   Future<void> register({required String email, required String password});
   Future<void> sendPasswordReset(String email);
   Future<void> sendVerification();
+  Future<void> refreshSession();
   Future<void> signOut();
 }

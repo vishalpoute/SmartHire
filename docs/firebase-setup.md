@@ -1,8 +1,8 @@
 # Firebase development setup
 
-The Flutter client now includes Firebase Core and Authentication dependencies and an explicit startup configuration boundary. Account actions remain previews until their repository/session integration is delivered.
+The Flutter client includes Firebase Core and Authentication dependencies and an explicit startup configuration boundary. Account forms use the authentication repository when Firebase initializes successfully; unconfigured builds retain the local preview. Live Firebase project registration and service verification are still pending.
 
-The authentication repository implements sign-in, signup, password-reset requests, verification requests and sign-out. Session state follows Firebase user changes and clears user data on stream failure. Action state prevents duplicate in-flight requests, supports retries, hides unexpected diagnostics and separates signup from verification-email delivery so a mail failure cannot misreport account creation. Controlled test doubles verify these behaviors without touching a live Firebase project. Form wiring, registered-client configuration and live/emulator integration checks remain pending.
+The authentication repository implements sign-in, signup, password-reset requests, verification requests, session refresh and sign-out. Session state follows Firebase user changes and clears user data on stream failure. Action state prevents duplicate in-flight requests, supports retries, hides unexpected diagnostics and separates signup from verification-email delivery so a mail failure cannot misreport account creation. Connected forms show loading/error feedback and an account summary with verification and sign-out actions. Controlled test doubles verify these behaviors without touching a live Firebase project. Registered-client configuration and live/emulator integration checks remain pending.
 
 ## Configuration
 
@@ -14,7 +14,7 @@ flutter run -d chrome --dart-define-from-file=config/firebase.local.json
 flutter build web --release --dart-define-from-file=config/firebase.local.json
 ```
 
-Builds with no Firebase configuration keep the sample preview available. Partial configuration or initialization failure shows an account-service setup notice while job discovery remains available. No configuration values are logged. A complete configuration initializes Firebase but does not yet enable the preview forms to submit real account actions.
+Builds with no Firebase configuration keep the sample preview available. Partial configuration or initialization failure shows an account-service setup notice while job discovery remains available. No configuration values are logged. A complete configuration initializes Firebase and enables real account actions, so connect only to the intended project. Name/profile fields and recruiter intent stay in the sample registration preview until profile and approval workflows are implemented; configured signup creates an email account only and grants no application role.
 
 ## Emulators and rules
 

@@ -31,6 +31,8 @@ class TestAuthRepository implements AuthRepository {
   Future<void> sendVerification() => execute();
   @override
   Future<void> signOut() => execute();
+  @override
+  Future<void> refreshSession() => execute();
 }
 
 void main() {

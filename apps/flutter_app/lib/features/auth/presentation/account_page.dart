@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/routing/app_routes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/account_validation.dart';
+import '../domain/auth_repository.dart';
+import 'auth_action_cubit.dart';
+import 'session_cubit.dart';
+import 'account_summary.dart';
 
 enum AccountMode { signIn, register, resetPassword }
 
 class AccountPage extends StatefulWidget {
-  const AccountPage({super.key, required this.mode});
+  const AccountPage({super.key, required this.mode, this.repository});
   final AccountMode mode;
+  final AuthRepository? repository;
   @override
   State<AccountPage> createState() => _AccountPageState();
 }
@@ -16,9 +22,19 @@ class AccountPage extends StatefulWidget {
 class _AccountPageState extends State<AccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _password = TextEditingController();
+  final _email = TextEditingController();
+  AuthActionCubit? _actions;
   bool _showPassword = false;
   bool _recruiter = false;
   bool _validated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.repository != null) {
+      _actions = AuthActionCubit(widget.repository!);
+    }
+  }
 
   bool get _register => widget.mode == AccountMode.register;
   bool get _reset => widget.mode == AccountMode.resetPassword;
@@ -31,17 +47,56 @@ class _AccountPageState extends State<AccountPage> {
   @override
   void dispose() {
     _password.dispose();
+    _email.dispose();
+    _actions?.close();
     super.dispose();
   }
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    setState(() => _validated = true);
+    if (_actions == null) {
+      setState(() => _validated = true);
+    } else if (_reset) {
+      _actions!.resetPassword(_email.text.trim());
+    } else if (_register) {
+      _actions!.register(_email.text.trim(), _password.text);
+    } else {
+      _actions!.signIn(_email.text.trim(), _password.text);
+    }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    if (_actions == null) {
+      return _form(context, const AuthActionState(AuthActionStatus.idle));
+    }
+    return BlocConsumer<AuthActionCubit, AuthActionState>(
+      bloc: _actions,
+      listener: (context, state) {
+        if (state.status == AuthActionStatus.succeeded) {
+          _password.clear();
+          if (!_reset) _email.clear();
+        }
+      },
+      builder: (context, state) => BlocBuilder<SessionCubit, SessionState>(
+        builder: (context, session) {
+          if (session.status == SessionStatus.signedIn &&
+              session.user != null &&
+              !_reset) {
+            return AccountSummary(
+              user: session.user!,
+              actions: _actions!,
+              state: state,
+            );
+          }
+          return _form(context, state);
+        },
+      ),
+    );
+  }
+
+  Widget _form(BuildContext context, AuthActionState actionState) => Scaffold(
     body: SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -133,16 +188,18 @@ class _AccountPageState extends State<AccountPage> {
                                 color: const Color(0xFFF0EBD9),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
-                                'Account preview · Firebase connection is coming next. No account will be created and no details will be sent.',
-                                style: TextStyle(
+                              child: Text(
+                                _actions == null
+                                    ? 'Account preview · Firebase connection is coming next. No account will be created and no details will be sent.'
+                                    : 'Secure email sign-in · Job listings are still samples. Profile setup and recruiter approval are coming next.',
+                                style: const TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF756336),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 24),
-                            if (_register) ...[
+                            if (_register && _actions == null) ...[
                               TextFormField(
                                 key: const Key('account-name'),
                                 validator: AccountValidation.name,
@@ -156,6 +213,7 @@ class _AccountPageState extends State<AccountPage> {
                             ],
                             TextFormField(
                               key: const Key('account-email'),
+                              controller: _email,
                               validator: AccountValidation.email,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: _reset
@@ -226,6 +284,8 @@ class _AccountPageState extends State<AccountPage> {
                                   labelText: 'Confirm password',
                                 ),
                               ),
+                            ],
+                            if (_register && _actions == null) ...[
                               const SizedBox(height: 24),
                               const Text(
                                 'I’m here to',
@@ -279,8 +339,23 @@ class _AccountPageState extends State<AccountPage> {
                               width: double.infinity,
                               child: FilledButton(
                                 key: const Key('account-submit'),
-                                onPressed: _submit,
-                                child: const Text('Check details'),
+                                onPressed:
+                                    actionState.status ==
+                                        AuthActionStatus.submitting
+                                    ? null
+                                    : _submit,
+                                child: Text(
+                                  actionState.status ==
+                                          AuthActionStatus.submitting
+                                      ? 'Please wait…'
+                                      : _actions == null
+                                      ? 'Check details'
+                                      : _reset
+                                      ? 'Request reset link'
+                                      : _register
+                                      ? 'Create account'
+                                      : 'Sign in',
+                                ),
                               ),
                             ),
                             if (_validated)
@@ -289,6 +364,14 @@ class _AccountPageState extends State<AccountPage> {
                                 child: Text(
                                   'Your details look valid. This preview does not sign you in, create an account or send a reset email.',
                                   key: Key('account-preview-result'),
+                                ),
+                              ),
+                            if (actionState.message != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Text(
+                                  actionState.message!,
+                                  key: const Key('account-action-message'),
                                 ),
                               ),
                             const SizedBox(height: 18),

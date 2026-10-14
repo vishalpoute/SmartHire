@@ -52,6 +52,15 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() => _translate(_auth.signOut);
 
+  @override
+  Future<void> refreshSession() => _translate(() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw const AuthFailure('Sign in to refresh your account.');
+    }
+    await user.reload();
+  });
+
   Future<void> _translate(Future<void> Function() operation) async {
     try {
       await operation();

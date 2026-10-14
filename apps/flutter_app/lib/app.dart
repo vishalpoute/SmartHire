@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/routing/app_routes.dart';
 import 'core/firebase/firebase_bootstrap.dart';
 import 'features/auth/presentation/account_page.dart';
+import 'features/auth/domain/auth_repository.dart';
+import 'features/auth/data/firebase_auth_repository.dart';
+import 'features/auth/presentation/session_cubit.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/presentation/jobs_cubit.dart';
 import 'features/jobs/presentation/job_discovery_page.dart';
@@ -13,45 +17,66 @@ class SmartHireApp extends StatelessWidget {
   const SmartHireApp({
     super.key,
     this.firebaseAvailability = FirebaseAvailability.preview,
+    this.authRepository,
   });
   final FirebaseAvailability firebaseAvailability;
+  final AuthRepository? authRepository;
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) => JobsCubit(DemoJobRepository())..load(),
-    child: MaterialApp(
-      title: 'SmartHire',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      builder: (context, child) =>
-          firebaseAvailability == FirebaseAvailability.unavailable
-          ? Column(
-              children: [
-                const Material(
-                  color: Color(0xFFF0EBD9),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Text(
-                        'Account service setup is unavailable. You can still explore sample jobs.',
+  Widget build(BuildContext context) => RepositoryProvider<AuthRepository?>(
+    create: (_) =>
+        authRepository ??
+        (firebaseAvailability == FirebaseAvailability.ready
+            ? FirebaseAuthRepository(FirebaseAuth.instance)
+            : null),
+    child: MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => JobsCubit(DemoJobRepository())..load()),
+        BlocProvider(
+          create: (context) => SessionCubit(context.read<AuthRepository?>()),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'SmartHire',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        builder: (context, child) =>
+            firebaseAvailability == FirebaseAvailability.unavailable
+            ? Column(
+                children: [
+                  const Material(
+                    color: Color(0xFFF0EBD9),
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text(
+                          'Account service setup is unavailable. You can still explore sample jobs.',
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Expanded(child: child!),
-              ],
-            )
-          : child!,
-      initialRoute: AppRoutes.discover,
-      routes: {
-        AppRoutes.discover: (_) => const JobDiscoveryPage(),
-        AppRoutes.signIn: (_) => const AccountPage(mode: AccountMode.signIn),
-        AppRoutes.register: (_) =>
-            const AccountPage(mode: AccountMode.register),
-        AppRoutes.resetPassword: (_) =>
-            const AccountPage(mode: AccountMode.resetPassword),
-      },
+                  Expanded(child: child!),
+                ],
+              )
+            : child!,
+        initialRoute: AppRoutes.discover,
+        routes: {
+          AppRoutes.discover: (_) => const JobDiscoveryPage(),
+          AppRoutes.signIn: (context) => AccountPage(
+            mode: AccountMode.signIn,
+            repository: context.read<AuthRepository?>(),
+          ),
+          AppRoutes.register: (context) => AccountPage(
+            mode: AccountMode.register,
+            repository: context.read<AuthRepository?>(),
+          ),
+          AppRoutes.resetPassword: (context) => AccountPage(
+            mode: AccountMode.resetPassword,
+            repository: context.read<AuthRepository?>(),
+          ),
+        },
+      ),
     ),
   );
 }

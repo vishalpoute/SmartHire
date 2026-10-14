@@ -30,6 +30,8 @@ class AuthActionCubit extends Cubit<AuthActionState> {
   Future<void> verifyEmail() =>
       _run(_repository.sendVerification, 'Verification email requested.');
   Future<void> signOut() => _run(_repository.signOut, 'Signed out.');
+  Future<void> refreshSession() =>
+      _run(_repository.refreshSession, 'Account status refreshed.');
 
   Future<void> _run(Future<void> Function() operation, String success) async {
     if (isClosed || state.status == AuthActionStatus.submitting) return;

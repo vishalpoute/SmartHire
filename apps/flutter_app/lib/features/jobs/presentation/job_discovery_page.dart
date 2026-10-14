@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/routing/app_routes.dart';
+import '../../auth/presentation/session_cubit.dart';
 import '../domain/job.dart';
 import 'jobs_cubit.dart';
 import 'widgets/job_card.dart';
@@ -252,10 +253,14 @@ class _Header extends StatelessWidget {
         ),
       ),
       const SizedBox(width: 8),
-      IconButton(
-        tooltip: 'Sign in',
-        onPressed: () => Navigator.pushNamed(context, AppRoutes.signIn),
-        icon: const Icon(Icons.person_outline),
+      BlocBuilder<SessionCubit, SessionState>(
+        builder: (context, session) => IconButton(
+          tooltip: session.status == SessionStatus.signedIn
+              ? 'Your account'
+              : 'Sign in',
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.signIn),
+          icon: const Icon(Icons.person_outline),
+        ),
       ),
     ],
   );

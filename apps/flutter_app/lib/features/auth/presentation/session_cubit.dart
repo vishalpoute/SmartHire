@@ -15,8 +15,12 @@ class SessionState {
 }
 
 class SessionCubit extends Cubit<SessionState> {
-  SessionCubit(AuthRepository repository)
+  SessionCubit(AuthRepository? repository)
     : super(const SessionState(SessionStatus.loading)) {
+    if (repository == null) {
+      emit(const SessionState(SessionStatus.signedOut));
+      return;
+    }
     _subscription = repository.watchSession().listen(
       (user) {
         if (!isClosed) {
@@ -33,11 +37,11 @@ class SessionCubit extends Cubit<SessionState> {
       },
     );
   }
-  late final StreamSubscription<AuthUser?> _subscription;
+  StreamSubscription<AuthUser?>? _subscription;
 
   @override
   Future<void> close() async {
-    await _subscription.cancel();
+    await _subscription?.cancel();
     await super.close();
   }
 }
