@@ -32,7 +32,7 @@ Firebase initialization and local emulator configuration are scaffolded. See `do
 
 `apps/flutter_app/lib/core` holds the shared theme. Each feature has domain, data and presentation layers. The jobs repository interface separates the UI from its current fixtures; a Firestore adapter can replace it without moving data access into widgets. Feature state uses BLoC/Cubit and repository injection.
 
-`services/api` will contain the FastAPI service; `firebase` will hold access rules and indexes as integration is added. See `docs/roadmap.md` for implementation order.
+`services/api` contains the tested FastAPI health and Firebase identity foundation; see its README for local setup. Live API deployment and client integration remain pending. `firebase` holds the restrictive rule scaffold. See `docs/roadmap.md` for implementation order.
 
 ## Design
 

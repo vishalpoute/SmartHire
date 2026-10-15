@@ -10,12 +10,13 @@
 - [x] Firebase dependency/bootstrap boundary, example client configuration and restrictive emulator rule scaffold
 - [x] Firebase authentication repository and tested session/action state, ready for form integration
 - [x] Conditional account-form integration, session summary, verification refresh and sign-out with controlled UI tests
+- [x] FastAPI liveness and protected identity endpoint, fail-closed Firebase token adapter and isolated API tests
 
 ## Next milestones
 
 1. Register Firebase clients and verify live authentication and local emulator/rules behavior.
 2. Add protected feature routes and profile onboarding after authentication setup is verified.
-3. FastAPI health endpoint, Firebase token verification and permission checks.
+3. Verify API authentication with the live Firebase project, then add permission checks and Render deployment.
 4. Seeker profiles, company profiles and server-managed recruiter approval.
 5. Firestore job repository, scoped rules, indexes and job publishing.
 6. Private resume upload, durable parsing tasks and skill confirmation.
