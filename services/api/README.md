@@ -26,4 +26,6 @@ Set environment variables from `.env.example` in the server process; the applica
 
 Missing or invalid authentication returns 401; unavailable verification/configuration returns 503. Expected errors use `{code, message, requestId}` without SDK diagnostics. Responses include a UUID request ID and disable caching. CORS allows only explicitly configured origins; CORS does not replace authentication.
 
+Unexpected request failures return the same envelope with a generic 500 message. Application error logs contain only the request ID and exception type, excluding exception messages, authorization headers and query strings. Configure infrastructure access logs separately to avoid recording sensitive request data. Allowed clients can read failure responses through CORS; untrusted origins receive no CORS grant. Method errors retain the HTTP `Allow` header.
+
 Live Firebase token verification, emulator integration, permission policies, profiles and Render deployment remain pending. The Antideploy app serves only the Flutter preview.

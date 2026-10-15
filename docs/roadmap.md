@@ -11,6 +11,7 @@
 - [x] Firebase authentication repository and tested session/action state, ready for form integration
 - [x] Conditional account-form integration, session summary, verification refresh and sign-out with controlled UI tests
 - [x] FastAPI liveness and protected identity endpoint, fail-closed Firebase token adapter and isolated API tests
+- [x] Sanitized unexpected API failures with request tracing, safe outage responses and preserved HTTP/CORS behavior
 
 ## Next milestones
 

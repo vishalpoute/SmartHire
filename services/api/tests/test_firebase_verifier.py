@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
-from firebase_admin import auth
+from firebase_admin import auth, exceptions
 
 from app.auth import FirebaseTokenVerifier
 from app.errors import ApiError
@@ -48,4 +48,24 @@ def test_unavailable_credentials_are_not_reported_as_an_invalid_user(monkeypatch
     with pytest.raises(ApiError) as result:
         FirebaseTokenVerifier(Settings(firebase_project_id="demo-smarthire")).verify("test-token")
     assert result.value.status == 503
+    assert "private" not in result.value.message
+
+
+@pytest.mark.parametrize(
+    "sdk_error",
+    [
+        auth.CertificateFetchError("private diagnostic", cause=RuntimeError("private cause")),
+        exceptions.UnavailableError("private diagnostic"),
+    ],
+)
+def test_provider_outages_return_retryable_service_failure_not_invalid_identity(
+    monkeypatch, sdk_error
+):
+    monkeypatch.setattr("app.auth.firebase_admin.initialize_app", Mock(return_value=object()))
+    monkeypatch.setattr("app.auth.auth.verify_id_token", Mock(side_effect=sdk_error))
+    verifier = FirebaseTokenVerifier(Settings(firebase_project_id="demo-smarthire"))
+    with pytest.raises(ApiError) as result:
+        verifier.verify("test-token")
+    assert result.value.status == 503
+    assert result.value.code == "auth_unavailable"
     assert "private" not in result.value.message

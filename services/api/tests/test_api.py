@@ -116,3 +116,40 @@ def test_wildcard_cors_environment_is_rejected(monkeypatch):
     monkeypatch.setenv("ALLOWED_ORIGINS", "*")
     with pytest.raises(ValueError):
         Settings.from_environment()
+
+
+@pytest.mark.parametrize("origin", ["https://preview.example", "https://untrusted.example"])
+def test_unexpected_failures_are_safe_traceable_and_readable_by_allowed_clients(caplog, origin):
+    verifier = Verifier(error=RuntimeError("private-token-and-user-data"))
+    settings = Settings(allowed_origins=("https://preview.example",))
+    with TestClient(create_app(settings, token_verifier=verifier)) as client:
+        response = client.get(
+            "/api/v1/me?private=query",
+            headers={"Authorization": "Bearer secret-test", "Origin": origin},
+        )
+    assert response.status_code == 500
+    assert response.json() == {
+        "code": "internal_error",
+        "message": "Please try again later.",
+        "requestId": response.headers["X-Request-ID"],
+    }
+    assert response.headers["Cache-Control"] == "no-store"
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers.get("Access-Control-Allow-Origin") == (
+        origin if origin == "https://preview.example" else None
+    )
+    application_logs = " ".join(
+        record.getMessage() for record in caplog.records if record.name == "smarthire.api"
+    )
+    assert response.json()["requestId"] in application_logs
+    assert "RuntimeError" in application_logs
+    for sensitive in ("private-token", "secret-test", "private=query"):
+        assert sensitive not in application_logs + response.text
+
+
+def test_method_not_allowed_preserves_the_allow_header():
+    with TestClient(create_app(Settings())) as client:
+        response = client.post("/health")
+    assert response.status_code == 405
+    assert "GET" in response.headers["Allow"]
+    assert response.json()["code"] == "request_error"

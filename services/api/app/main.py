@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -10,6 +11,8 @@ from starlette.exceptions import HTTPException
 from app.auth import FirebaseTokenVerifier, Identity, require_identity
 from app.errors import ApiError
 from app.settings import Settings
+
+logger = logging.getLogger("smarthire.api")
 
 
 def create_app(settings: Settings | None = None, *, token_verifier=None) -> FastAPI:
@@ -32,7 +35,21 @@ def create_app(settings: Settings | None = None, *, token_verifier=None) -> Fast
             request.state.request_id = str(UUID(supplied))
         except ValueError:
             request.state.request_id = str(uuid4())
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception as error:  # noqa: BLE001 - sanitize unexpected failures at the HTTP boundary.
+            # Exception messages, URLs and headers can contain credentials or personal data.
+            logger.error(
+                "request_failed request_id=%s error_type=%s",
+                request.state.request_id,
+                type(error).__name__,
+            )
+            response = error_response(request, 500, "internal_error", "Please try again later.")
+            origin = request.headers.get("Origin")
+            if origin in settings.allowed_origins:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Expose-Headers"] = "X-Request-ID"
+                response.headers["Vary"] = "Origin"
         response.headers["X-Request-ID"] = request.state.request_id
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Cache-Control"] = "no-store"
@@ -56,9 +73,13 @@ def create_app(settings: Settings | None = None, *, token_verifier=None) -> Fast
 
     @api.exception_handler(HTTPException)
     async def handle_http_error(request: Request, error: HTTPException):
-        return error_response(
+        response = error_response(
             request, error.status_code, "request_error", "This request is unavailable."
         )
+        # Preserve protocol-required headers, without forwarding arbitrary diagnostic headers.
+        if error.headers and "Allow" in error.headers:
+            response.headers["Allow"] = error.headers["Allow"]
+        return response
 
     @api.get("/health")
     def health():
