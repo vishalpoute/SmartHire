@@ -17,9 +17,11 @@
 
 - [x] Dedicated role detail routes with copyable Web links, session saves and unavailable/retry states
 
+- [x] Firebase Spark development project and Web app registration, email/password provider and preview domain configured
+
 ## Next milestones
 
-1. Register Firebase clients and verify live authentication and local emulator/rules behavior.
+1. Save Web client build configuration, register Android and verify live authentication and local emulator/rules behavior.
 2. Add protected feature routes and profile onboarding after authentication setup is verified.
 3. Verify API authentication with the live Firebase project, then add permission checks and Render deployment.
 4. Seeker profiles, company profiles and server-managed recruiter approval.
