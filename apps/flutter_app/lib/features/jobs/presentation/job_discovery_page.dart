@@ -65,15 +65,7 @@ class JobDiscoveryPage extends StatelessWidget {
                               children: [
                                 const _Introduction(),
                                 const SizedBox(height: 28),
-                                TextField(
-                                  key: const Key('job-search'),
-                                  onChanged: context.read<JobsCubit>().search,
-                                  decoration: const InputDecoration(
-                                    hintText:
-                                        'Job title, skill, company or city',
-                                    prefixIcon: Icon(Icons.search),
-                                  ),
-                                ),
+                                const _JobSearch(),
                                 const SizedBox(height: 16),
                                 const _Filters(),
                                 const SizedBox(height: 26),
@@ -96,6 +88,46 @@ class JobDiscoveryPage extends StatelessWidget {
         ),
       );
     },
+  );
+}
+
+class _JobSearch extends StatefulWidget {
+  const _JobSearch();
+  @override
+  State<_JobSearch> createState() => _JobSearchState();
+}
+
+class _JobSearchState extends State<_JobSearch> {
+  late final TextEditingController _controller;
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: context.read<JobsCubit>().state.query,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => BlocListener<JobsCubit, JobsState>(
+    listenWhen: (previous, current) => previous.query != current.query,
+    listener: (context, state) {
+      if (_controller.text != state.query) _controller.text = state.query;
+    },
+    child: TextField(
+      controller: _controller,
+      key: const Key('job-search'),
+      onChanged: context.read<JobsCubit>().search,
+      decoration: const InputDecoration(
+        hintText: 'Job title, skill, company or city',
+        prefixIcon: Icon(Icons.search),
+      ),
+    ),
   );
 }
 
@@ -365,6 +397,42 @@ class _Results extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             '${jobs.length} ${jobs.length == 1 ? 'role' : 'roles'} · Sample listings',
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              SizedBox(
+                width: 220,
+                child: DropdownButtonFormField<JobSort>(
+                  isExpanded: true,
+                  key: ValueKey(state.sort),
+                  initialValue: state.sort,
+                  decoration: const InputDecoration(labelText: 'Sort jobs'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: JobSort.newest,
+                      child: Text('Newest first'),
+                    ),
+                    DropdownMenuItem(
+                      value: JobSort.title,
+                      child: Text('Job title A-Z'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) context.read<JobsCubit>().sortBy(value);
+                  },
+                ),
+              ),
+              if (state.query.isNotEmpty || state.mode != null)
+                TextButton.icon(
+                  onPressed: context.read<JobsCubit>().resetFilters,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Reset filters'),
+                ),
+            ],
           ),
           const SizedBox(height: 20),
           if (jobs.isEmpty)

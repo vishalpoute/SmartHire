@@ -13,6 +13,8 @@
 - [x] FastAPI liveness and protected identity endpoint, fail-closed Firebase token adapter and isolated API tests
 - [x] Sanitized unexpected API failures with request tracing, safe outage responses and preserved HTTP/CORS behavior
 
+- [x] Job discovery sorting and filter reset that preserves saved jobs and view selection
+
 ## Next milestones
 
 1. Register Firebase clients and verify live authentication and local emulator/rules behavior.

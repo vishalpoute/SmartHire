@@ -33,6 +33,34 @@ void main() {
     cubit.toggleSaved('fern-mobile');
     expect(cubit.state.visibleJobs, isEmpty);
   });
+  test(
+    'sorting combines with filters and never reorders repository data',
+    () async {
+      final cubit = JobsCubit(DemoJobRepository());
+      addTearDown(cubit.close);
+      await cubit.load();
+      final original = cubit.state.jobs.map((job) => job.id).toList();
+      final newest = cubit.state.visibleJobs
+          .map((job) => job.postedDaysAgo)
+          .toList();
+      expect(newest, orderedEquals([...newest]..sort()));
+      cubit.sortBy(JobSort.title);
+      final titles = cubit.state.visibleJobs
+          .map((job) => job.title.toLowerCase())
+          .toList();
+      expect(titles, orderedEquals([...titles]..sort()));
+      cubit.toggleSaved('fern-mobile');
+      cubit.showSaved(true);
+      cubit.search('missing');
+      cubit.filter(WorkMode.remote);
+      expect(cubit.state.visibleJobs, isEmpty);
+      cubit.resetFilters();
+      expect(cubit.state.visibleJobs.single.id, 'fern-mobile');
+      expect(cubit.state.savedOnly, isTrue);
+      expect(cubit.state.sort, JobSort.title);
+      expect(cubit.state.jobs.map((job) => job.id), orderedEquals(original));
+    },
+  );
   test('repository failure yields recoverable failure state', () async {
     final cubit = JobsCubit(FailingRepository());
     addTearDown(cubit.close);
