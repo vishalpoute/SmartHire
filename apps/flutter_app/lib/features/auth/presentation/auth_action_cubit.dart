@@ -15,6 +15,9 @@ class AuthActionCubit extends Cubit<AuthActionState> {
     : super(const AuthActionState(AuthActionStatus.idle));
   final AuthRepository _repository;
 
+  Future<void> signInWithGoogle() =>
+      _run(_repository.signInWithGoogle, 'Signed in with Google.');
+
   Future<void> signIn(String email, String password) => _run(
     () => _repository.signIn(email: email, password: password),
     'Signed in.',

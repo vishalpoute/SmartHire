@@ -1,10 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../domain/auth_repository.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository(this._auth);
   final FirebaseAuth _auth;
+
+  @override
+  bool get supportsGoogle => kIsWeb;
+
+  @override
+  Future<void> signInWithGoogle() => _translate(() async {
+    if (!supportsGoogle) {
+      throw const AuthFailure(
+        'Google sign-in is currently available on the Web app.',
+      );
+    }
+    await _auth.signInWithPopup(GoogleAuthProvider());
+  });
 
   @override
   Stream<AuthUser?> watchSession() => _auth.userChanges().map(
@@ -81,8 +95,16 @@ class FirebaseAuthRepository implements AuthRepository {
       'Too many attempts. Please wait before trying again.',
     'network-request-failed' => 'Check your connection and try again.',
     'user-disabled' => 'This account is unavailable. Contact support.',
+    'popup-closed-by-user' || 'cancelled-popup-request' =>
+      'Google sign-in was cancelled. You can try again.',
+    'popup-blocked' =>
+      'Allow popups for SmartHire, then try Google sign-in again.',
+    'account-exists-with-different-credential' =>
+      'Sign in using your existing account method first.',
+    'unauthorized-domain' =>
+      'Google sign-in is not configured for this address.',
     'operation-not-allowed' =>
-      'Email sign-in is not enabled yet. Please try later.',
+      'This sign-in method is not enabled yet. Please try later.',
     _ =>
       'The account service could not complete this request. Please try again.',
   };

@@ -12,6 +12,10 @@ class TestAuthRepository implements AuthRepository {
   Object? failure;
   int requests = 0;
   @override
+  bool get supportsGoogle => true;
+  @override
+  Future<void> signInWithGoogle() => execute();
+  @override
   Stream<AuthUser?> watchSession() => sessions.stream;
   Future<void> execute() async {
     requests++;
@@ -48,6 +52,25 @@ void main() {
     await first;
     expect(cubit.state.status, AuthActionStatus.succeeded);
   });
+  test(
+    'Google cancellation allows retry and shares duplicate-submit protection',
+    () async {
+      final repo = TestAuthRepository()
+        ..failure = const AuthFailure('Google sign-in was cancelled.');
+      final cubit = AuthActionCubit(repo);
+      addTearDown(cubit.close);
+      await cubit.signInWithGoogle();
+      expect(cubit.state.status, AuthActionStatus.failed);
+      repo.failure = null;
+      repo.pending = Completer<void>();
+      final pending = cubit.signInWithGoogle();
+      await cubit.signIn('demo@example.com', 'password');
+      expect(repo.requests, 2);
+      repo.pending!.complete();
+      await pending;
+      expect(cubit.state.status, AuthActionStatus.succeeded);
+    },
+  );
   test('a failed request can be retried successfully', () async {
     final repo = TestAuthRepository()
       ..failure = const AuthFailure('Connection unavailable.');

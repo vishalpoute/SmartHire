@@ -358,6 +358,22 @@ class _AccountPageState extends State<AccountPage> {
                                 ),
                               ),
                             ),
+                            if (!_reset &&
+                                widget.repository?.supportsGoogle == true) ...[
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  key: const Key('google-sign-in'),
+                                  onPressed:
+                                      actionState.status ==
+                                          AuthActionStatus.submitting
+                                      ? null
+                                      : () => _actions!.signInWithGoogle(),
+                                  child: const Text('Continue with Google'),
+                                ),
+                              ),
+                            ],
                             if (_validated)
                               const Padding(
                                 padding: EdgeInsets.only(top: 16),

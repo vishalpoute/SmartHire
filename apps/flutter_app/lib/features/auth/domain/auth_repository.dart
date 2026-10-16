@@ -15,6 +15,8 @@ class AuthFailure implements Exception {
 }
 
 abstract interface class AuthRepository {
+  bool get supportsGoogle;
+  Future<void> signInWithGoogle();
   Stream<AuthUser?> watchSession();
   Future<void> signIn({required String email, required String password});
   Future<void> register({required String email, required String password});

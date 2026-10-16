@@ -19,6 +19,8 @@
 
 - [x] Firebase Spark development project and Web app registration, email/password provider and preview domain configured
 
+- [x] Web Google sign-in action, safe popup/cancellation feedback and controlled regression tests; live Google completion requires user verification
+
 ## Next milestones
 
 1. Save Web client build configuration, register Android and verify live authentication and local emulator/rules behavior.

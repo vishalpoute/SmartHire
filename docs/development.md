@@ -1,6 +1,6 @@
 # Working agreements
 
-Continue through the roadmap in coherent, tested increments. Daily sessions may vary between noon and 9 PM IST. Aim for three useful commits, allow two when time or verification limits progress, and never exceed three. Keep at least two hours between actual commit timestamps and aim for two to three hours. Never backdate, create empty activity commits, or skip checks to meet a quota.
+Continue through the roadmap in coherent, tested increments. Use randomized sessions between 9 AM and 6 PM Asia/Kolkata. Target six to seven useful commits per day, with a maximum of seven. Keep at least 60 minutes between actual commit timestamps; the helper persists randomized targets with 60–80 minute gaps and a first session between 9:00 and 9:40 AM. Do not commit at or after 6 PM. Validation may reduce the daily total. Never backdate, create empty activity commits, or skip checks to meet a quota.
 
 Run `python scripts/work_window.py` before starting a scheduled session and again before committing. It reads Git history and persists randomized session targets in ignored local state. When not due, leave the repository alone. Do not run concurrent sessions in this checkout.
 

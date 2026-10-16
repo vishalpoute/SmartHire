@@ -55,6 +55,25 @@ class UiAuthRepository extends TestAuthRepository {
 }
 
 void main() {
+  testWidgets(
+    'Google sign-in works without filling email fields and handles cancellation',
+    (tester) async {
+      final repo = TestAuthRepository()
+        ..failure = const AuthFailure('Google sign-in was cancelled.');
+      addTearDown(repo.sessions.close);
+      await tester.pumpWidget(
+        SmartHireApp(authRepository: repo, initialRoute: '/sign-in'),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('google-sign-in')));
+      await tester.tap(find.byKey(const Key('google-sign-in')));
+      await tester.pumpAndSettle();
+      expect(repo.requests, 1);
+      expect(find.text('Google sign-in was cancelled.'), findsOneWidget);
+      expect(find.text('Enter your email address'), findsNothing);
+    },
+  );
+
   testWidgets('connected signup creates only an unverified email account', (
     tester,
   ) async {

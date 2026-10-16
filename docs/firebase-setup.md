@@ -16,7 +16,7 @@ Created 16 October 2026 under the signed-in Google account on the free Spark pla
 
 Console: https://console.firebase.google.com/project/smarthire-dev-99f32/overview
 
-The hosted build still uses preview mode. Client configuration has not yet been saved into the build configuration: the browser runtime could not write its extracted configuration under the current filesystem policy. No Admin SDK credentials were created or exported. Android registration, live authentication checks, emulator/rules verification and backend credentials remain pending.
+The hosted Web build now uses the registered development client configuration, stored outside Git at `work/firebase/web-dev.json` in the task workspace. The temporary export restriction was resolved. Live browser validation confirmed connected email sign-in and safe rejection of a nonexistent test identity; successful signup and email delivery remain unverified. Google provider is now enabled with the approved support email and app name SmartHire. Web Google sign-in uses a popup; Android remains disabled until app registration and signing fingerprints are configured. No Admin SDK credentials were created or exported. Android registration, live authentication checks, emulator/rules verification and backend credentials remain pending.
 
 ## Configuration
 
@@ -47,3 +47,5 @@ The `demo-` project is for local testing and cannot access live resources. This 
 Save the registered Web client configuration in an ignored local build file, build and verify real authentication against the development project, then register Android (`com.vishalpoute.smarthire`). The authentication repository and session Cubit are already implemented and tested with controlled doubles. Recruiter selection must remain an approval request, never a client-assigned privileged role. Storage billing and resume uploads are later milestones.
 
 Official references: https://firebase.google.com/docs/flutter/setup and https://firebase.google.com/docs/emulator-suite/install_and_configure
+
+Google Web flow reference: https://firebase.google.com/docs/auth/flutter/federated-auth
