@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../../domain/job.dart';
 
 class JobCard extends StatelessWidget {
@@ -126,46 +127,6 @@ class JobCard extends StatelessWidget {
     ),
   );
 
-  void _showDetails(BuildContext context) => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    constraints: const BoxConstraints(maxWidth: 640),
-    builder: (context) => SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(28, 12, 28, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(job.company),
-            const SizedBox(height: 8),
-            Text(job.title, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            Text('${job.location} · ${job.mode.label} · ${job.salary}'),
-            const SizedBox(height: 24),
-            Text(
-              'About the role',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(job.description),
-            const SizedBox(height: 24),
-            Text('Skills', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(job.skills.join(' · ')),
-            const SizedBox(height: 28),
-            const Text(
-              'This is a fictional sample listing. Applications will be available after sign-in and backend integration.',
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Back to jobs'),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  void _showDetails(BuildContext context) =>
+      Navigator.pushNamed(context, AppRoutes.jobDetails(job.id));
 }

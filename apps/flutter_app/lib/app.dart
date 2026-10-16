@@ -12,15 +12,18 @@ import 'features/auth/presentation/session_cubit.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/presentation/jobs_cubit.dart';
 import 'features/jobs/presentation/job_discovery_page.dart';
+import 'features/jobs/presentation/job_details_page.dart';
 
 class SmartHireApp extends StatelessWidget {
   const SmartHireApp({
     super.key,
     this.firebaseAvailability = FirebaseAvailability.preview,
     this.authRepository,
+    this.initialRoute,
   });
   final FirebaseAvailability firebaseAvailability;
   final AuthRepository? authRepository;
+  final String? initialRoute;
 
   @override
   Widget build(BuildContext context) => RepositoryProvider<AuthRepository?>(
@@ -60,7 +63,19 @@ class SmartHireApp extends StatelessWidget {
                 ],
               )
             : child!,
-        initialRoute: AppRoutes.discover,
+        initialRoute: initialRoute,
+        onGenerateRoute: (settings) {
+          final uri = Uri.tryParse(settings.name ?? '');
+          final parts = uri?.pathSegments ?? const <String>[];
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => JobDetailsPage(
+              jobId: parts.length == 2 && parts.first == 'jobs'
+                  ? parts.last
+                  : '',
+            ),
+          );
+        },
         routes: {
           AppRoutes.discover: (_) => const JobDiscoveryPage(),
           AppRoutes.signIn: (context) => AccountPage(

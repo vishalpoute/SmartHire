@@ -15,6 +15,8 @@
 
 - [x] Job discovery sorting and filter reset that preserves saved jobs and view selection
 
+- [x] Dedicated role detail routes with copyable Web links, session saves and unavailable/retry states
+
 ## Next milestones
 
 1. Register Firebase clients and verify live authentication and local emulator/rules behavior.
