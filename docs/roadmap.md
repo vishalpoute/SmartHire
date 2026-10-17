@@ -25,6 +25,8 @@
 
 - [x] Private profile API contract and Firestore adapter with verified-email/ownership checks and isolated persistence/validation tests (live deployment pending)
 
+- [x] Free Render API service blueprint and hosting runbook; local startup smoke check passed, account authorization and live deployment remain pending
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
