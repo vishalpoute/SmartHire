@@ -29,3 +29,11 @@ Missing or invalid authentication returns 401; unavailable verification/configur
 Unexpected request failures return the same envelope with a generic 500 message. Application error logs contain only the request ID and exception type, excluding exception messages, authorization headers and query strings. Configure infrastructure access logs separately to avoid recording sensitive request data. Allowed clients can read failure responses through CORS; untrusted origins receive no CORS grant. Method errors retain the HTTP `Allow` header.
 
 Live Firebase token verification, emulator integration, permission policies, profiles and Render deployment remain pending. The Antideploy app serves only the Flutter preview.
+
+## Private profile contract
+
+`GET /api/v1/profile` and `PUT /api/v1/profile` require a verified Firebase email. Both select the owner from the verified token; they accept no owner or role parameter. GET returns 404 before onboarding. PUT is a full replacement of editable fields: `display_name` (2–80 trimmed characters), `headline` (up to 120), `location` (up to 80), and `skills` (up to 30 strings, each 1–40 characters). Skills are trimmed and deduplicated without assigning match scores. Omitted optional fields reset to empty values. Unknown fields, including roles, ownership, verification and timestamps, return 422. Responses include the server-selected UID and server write timestamp.
+
+The Firestore adapter writes only editable fields plus `updated_at` into `private_profiles/{escaped_uid}`, merging so unrelated server-managed metadata is preserved. Reads expose only the profile response fields. Concurrent edits currently use last-write-wins behavior; no version precondition is implemented. Missing configuration and datastore failures return 503 without diagnostic details. HTTP CORS includes PUT for explicitly configured origins.
+
+The client is lazy, uses server Application Default Credentials and explicit `FIREBASE_PROJECT_ID`, and limits individual Firestore calls to 10 seconds without automatic retries. Do not put server credentials into the Web build. Existing client Firestore rules stay deny-all. A live Firestore database, appropriately scoped server credentials and Render API hosting must be configured and verified before enabling profile editing in Flutter. No live datastore writes were performed by the isolated tests.

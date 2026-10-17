@@ -10,20 +10,26 @@ from starlette.exceptions import HTTPException
 
 from app.auth import FirebaseTokenVerifier, Identity, require_identity
 from app.errors import ApiError
+from app.profiles import FirestoreProfileStore
+from app.profiles import router as profile_router
 from app.settings import Settings
 
 logger = logging.getLogger("smarthire.api")
 
 
-def create_app(settings: Settings | None = None, *, token_verifier=None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, *, token_verifier=None, profile_store=None
+) -> FastAPI:
     settings = settings or Settings.from_environment()
     api = FastAPI(title="SmartHire API", version="0.1.0")
     api.state.token_verifier = token_verifier or FirebaseTokenVerifier(settings)
+    api.state.profile_store = profile_store or FirestoreProfileStore(settings)
+    api.include_router(profile_router)
     if settings.allowed_origins:
         api.add_middleware(
             CORSMiddleware,
             allow_origins=list(settings.allowed_origins),
-            allow_methods=["GET"],
+            allow_methods=["GET", "PUT"],
             allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
             expose_headers=["X-Request-ID"],
         )
