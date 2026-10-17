@@ -25,7 +25,9 @@
 
 - [x] Private profile API contract and Firestore adapter with verified-email/ownership checks and isolated persistence/validation tests (live deployment pending)
 
-- [x] Free Render API service blueprint and hosting runbook; local startup smoke check passed, account authorization and live deployment remain pending
+- [x] Free Render API service blueprint and hosting runbook; local startup smoke check passed, Render service now live at commit 972a159 with health 200/protected routes 401; server credentials and authenticated persistence remain pending
+
+- [x] Immutable Flutter profile payload/response contract, editor field validation and malformed-response checks; editor and authenticated persistence remain pending
 
 ## Next milestones
 

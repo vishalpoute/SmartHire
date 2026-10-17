@@ -1,6 +1,6 @@
 # API hosting on Render
 
-The root `render.yaml` defines one free Python Web service in Singapore with the API under `services/api`. No database, disk, paid instance or background worker is included. The start command binds Render's `PORT`, disables Uvicorn access logs to avoid collecting tokens or profile-related query strings, and uses `/health` for liveness. Deployment is configured to follow passing CI checks on main. The service definition has not yet been applied to an authenticated Render workspace.
+The root `render.yaml` defines one free Python Web service in Singapore with the API under `services/api`. No database, disk, paid instance or background worker is included. The start command binds Render's `PORT`, disables Uvicorn access logs to avoid collecting tokens or profile-related query strings, and uses `/health` for liveness. Deployment is configured to follow passing CI checks on main. A matching free service was created through the Render dashboard after user-approved GitHub authorization. The YAML is a reproducible definition; it is not a connected Blueprint instance.
 
 Build: `python -m pip install -r requirements.lock.txt && python -m pip install . --no-deps`.
 
@@ -10,10 +10,10 @@ The Python version matches the tested development runtime. The lock contains dev
 
 ## Secure configuration still required
 
-Render sign-in currently requires GitHub authorization for vishalpoute. The permission screen asks to verify identity, read email addresses, know accessible resources and act on the user's behalf. Authorization is pending user approval; no access was granted by this work.
+Render GitHub sign-in for vishalpoute was authorized by the user and verified. The service uses the public repository source.
 
 Configure server Application Default Credentials through Render's secret-file facility, then set `GOOGLE_APPLICATION_CREDENTIALS` to that file's mounted path. Use a dedicated least-privilege Google service identity with only the Firebase user lookups and Firestore operations needed by this API. Do not upload a personal ADC file or create broad Owner/Editor credentials. Credentials must never be included in Git, build arguments, frontend assets, screenshots, logs or chat. IAM approval, a live Firestore database and live token verification remain prerequisites for profile persistence.
 
-A successful `/health` response means the process is running; it does not confirm identity or database readiness. Before connecting the Flutter editor, verify unauthenticated 401 responses, verified-email enforcement, two-account isolation, profile round trips, CORS behavior and safe failure handling on the actual hosted service. Record the actual URL and deployed Git SHA only after observing deployment success. No backend URL is live yet.
+A successful `/health` response means the process is running; it does not confirm identity or database readiness. Before connecting the Flutter editor, verify unauthenticated 401 responses, verified-email enforcement, two-account isolation, profile round trips, CORS behavior and safe failure handling on the actual hosted service. Record the actual URL and deployed Git SHA only after observing deployment success. The API is live at https://smarthire-api-ep83.onrender.com from commit `972a159`. Render reported Live, `/health` returned 200, and unauthenticated identity/profile requests returned 401. Server credentials and authenticated persistence are still unconfigured/unverified.
 
 Official references: https://render.com/docs/deploy-fastapi and https://render.com/docs/blueprint-spec
