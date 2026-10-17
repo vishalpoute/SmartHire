@@ -31,6 +31,8 @@
 
 - [x] Profile load/save state with draft-preserving failure/retry, duplicate-submit protection and reset/late-response isolation; HTTP adapter and editor integration remain pending
 
+- [x] Responsive profile editor component with validation, save feedback and preserved failed edits; route wiring and authenticated API integration remain pending
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
