@@ -21,10 +21,12 @@
 
 - [x] Web Google sign-in action, safe popup/cancellation feedback and controlled regression tests; live Google completion requires user verification
 
+- [x] Protected profile overview route that hides identity on sign-out or session failure; persistent onboarding remains pending
+
 ## Next milestones
 
-1. Save Web client build configuration, register Android and verify live authentication and local emulator/rules behavior.
-2. Add protected feature routes and profile onboarding after authentication setup is verified.
+1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
+2. Add persistent profile onboarding with scoped data rules and server permission checks.
 3. Verify API authentication with the live Firebase project, then add permission checks and Render deployment.
 4. Seeker profiles, company profiles and server-managed recruiter approval.
 5. Firestore job repository, scoped rules, indexes and job publishing.

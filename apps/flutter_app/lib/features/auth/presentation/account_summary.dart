@@ -88,6 +88,11 @@ class AccountSummary extends StatelessWidget {
                       ),
                       child: const Text('Explore jobs'),
                     ),
+                    FilledButton(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.profile),
+                      child: const Text('View profile'),
+                    ),
                     TextButton(
                       onPressed: state.status == AuthActionStatus.submitting
                           ? null

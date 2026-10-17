@@ -9,6 +9,7 @@ import 'features/auth/presentation/account_page.dart';
 import 'features/auth/domain/auth_repository.dart';
 import 'features/auth/data/firebase_auth_repository.dart';
 import 'features/auth/presentation/session_cubit.dart';
+import 'features/profile/presentation/profile_page.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/presentation/jobs_cubit.dart';
 import 'features/jobs/presentation/job_discovery_page.dart';
@@ -77,6 +78,7 @@ class SmartHireApp extends StatelessWidget {
           );
         },
         routes: {
+          AppRoutes.profile: (_) => const ProfilePage(),
           AppRoutes.discover: (_) => const JobDiscoveryPage(),
           AppRoutes.signIn: (context) => AccountPage(
             mode: AccountMode.signIn,
