@@ -29,6 +29,8 @@
 
 - [x] Immutable Flutter profile payload/response contract, editor field validation and malformed-response checks; editor and authenticated persistence remain pending
 
+- [x] Profile load/save state with draft-preserving failure/retry, duplicate-submit protection and reset/late-response isolation; HTTP adapter and editor integration remain pending
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
