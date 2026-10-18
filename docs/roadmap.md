@@ -21,7 +21,7 @@ Current target: validated MVP by 2 November 2026. See [delivery plan](delivery-p
 
 - [x] Firebase Spark development project and Web app registration, email/password provider and preview domain configured
 
-- [x] Web Google sign-in action, safe popup/cancellation feedback and controlled regression tests; live Google completion requires user verification
+- [x] Web Google sign-in action, safe popup/cancellation feedback and controlled regression tests; live Google completion manually confirmed by the user on 18 October 2026
 
 - [x] Protected profile overview route that hides identity on sign-out or session failure; persistent onboarding remains pending
 
@@ -78,4 +78,6 @@ Security follow-up: concurrent profile requests share one account budget; browse
 
 - Profile client now distinguishes suspended accounts, email-verification requirements, generic access denial and throttling with fixed safe messages; server diagnostics remain hidden.
 
-- Private job draft creation and owner-only reads, requiring both server recruiter approval and current owned-company approval to create. Generated IDs, server lifecycle metadata, bounded fields and authorization regression tests are implemented. Draft editing/publication/discovery/UI and live authenticated acceptance remain pending.
+- Private job draft creation and owner-only reads, requiring both server recruiter approval and current owned-company approval to create. Generated IDs, server lifecycle metadata, bounded fields and authorization regression tests are implemented. Publication/discovery/UI and live authenticated acceptance remain pending.
+
+- Owned job draft replacement with strict expected versions, server version increments and Firestore update-time preconditions. Concurrent/stale edits return safe conflicts; ownership, creation metadata and non-draft states are protected. Actual authenticated editing remains unverified.

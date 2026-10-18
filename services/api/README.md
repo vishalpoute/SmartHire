@@ -105,8 +105,26 @@ semantics, bounded calls and server timestamps; client Firestore rules remain de
 The private record links to `company_owner_uid`; this is not the public listing contract.
 A stable public company/listing representation must be defined before public browsing.
 
-Draft edits, version-conflict handling, publication/closing, indexes, public discovery and
+Publication/closing, indexes, public discovery and
 recruiter UI remain pending. No draft is published by these endpoints. Publication must
 recheck account/company approval atomically with the transition and validate complete
 requirements; earlier approval must not bypass later suspension or company edits.
 Live authenticated draft creation/ownership acceptance remains unverified.
+
+
+### Conflict-safe draft edits
+
+`PUT /api/v1/jobs/{id}` fully replaces editable draft fields and requires a strict positive
+`expected_version`. Current recruiter and owned-company approval are checked again. The
+server reads the owned draft, rejects non-draft state or a stale version with 409, and
+increments the version itself. Missing/foreign jobs return 404. Ownership, creation time,
+status and unrelated server metadata are preserved; omitted optional draft fields reset.
+
+The write uses the read snapshot's Firestore update-time precondition in addition to the
+application version check. A concurrent edit or lifecycle change cannot be silently
+replaced: precondition failures return sanitized 409 and the caller must reload. Storage
+calls remain bounded with automatic retries disabled. The concurrency regression test
+simulates two writers against the installed SDK's write-precondition representation;
+actual authenticated live edits remain unverified.
+
+Official write-option contract: https://docs.cloud.google.com/python/docs/reference/firestore/latest/google.cloud.firestore_v1.document.DocumentReference#google_cloud_firestore_v1_document_DocumentReference_update

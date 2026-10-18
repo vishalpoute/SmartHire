@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Path, Request
+from google.api_core.exceptions import Conflict, FailedPrecondition, NotFound
 from google.cloud import firestore
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -29,6 +30,10 @@ class JobDraftInput(BaseModel):
     @classmethod
     def clean_skills(cls, values):
         return ProfileInput.clean_skills(values)
+
+
+class JobDraftUpdate(JobDraftInput):
+    expected_version: int = Field(ge=1, le=2147483647)
 
 
 class JobDraft(JobDraftInput):
@@ -107,6 +112,56 @@ class FirestoreJobStore:
                 503, "jobs_unavailable", "Job drafts are temporarily unavailable."
             ) from None
 
+    def update_owned(self, uid, job_id, draft):
+        try:
+            document = self.collection().document(job_id)
+            snapshot = document.get(timeout=10, retry=None)
+            data = snapshot.to_dict() if snapshot.exists else None
+            if data is None or data.get("recruiter_uid") != uid:
+                raise ApiError(404, "job_not_found", "Job draft is unavailable.")
+            if data.get("status") != "draft":
+                raise ApiError(409, "job_not_editable", "Only draft jobs can be edited here.")
+            if data.get("company_owner_uid") != uid:
+                raise ValueError("Company owner mismatch")
+            current = JobDraft(
+                id=job_id,
+                **{key: data[key] for key in JobDraft.model_fields if key != "id" and key in data},
+            )
+            if current.version != draft.expected_version:
+                raise ApiError(409, "job_version_conflict", "Job changed. Reload before editing.")
+            fields = draft.model_dump(exclude={"expected_version"})
+            version = current.version + 1
+            # The version check alone is insufficient: another writer can race this read.
+            # Firestore must atomically assert that the read snapshot is still current.
+            if snapshot.update_time is None:
+                raise ValueError("Missing snapshot precondition")
+            result = document.update(
+                {**fields, "version": version, "updated_at": firestore.SERVER_TIMESTAMP},
+                option=firestore.LastUpdateOption(snapshot.update_time),
+                timeout=10,
+                retry=None,
+            )
+            return JobDraft(
+                id=job_id,
+                recruiter_uid=uid,
+                company_owner_uid=uid,
+                status="draft",
+                version=version,
+                created_at=current.created_at,
+                updated_at=result.update_time,
+                **fields,
+            )
+        except ApiError:
+            raise
+        except (Conflict, FailedPrecondition, NotFound):
+            raise ApiError(
+                409, "job_version_conflict", "Job changed. Reload before editing."
+            ) from None
+        except Exception:  # noqa: BLE001 - hide submitted data and SDK diagnostics.
+            raise ApiError(
+                503, "jobs_unavailable", "Job drafts are temporarily unavailable."
+            ) from None
+
 
 def approved_recruiter(request: Request, identity: Annotated[Identity, Depends(verified_identity)]):
     account = active_account(request, identity)
@@ -143,3 +198,13 @@ def read_owned_draft(
     if job is None:
         raise ApiError(404, "job_not_found", "Job draft is unavailable.")
     return job
+
+
+@router.put("/{job_id}", response_model=JobDraft)
+def update_owned_draft(
+    request: Request,
+    job_id: JobId,
+    identity: Annotated[Identity, Depends(approved_recruiter)],
+    draft: JobDraftUpdate,
+):
+    return request.app.state.job_store.update_owned(identity.uid, job_id, draft)
