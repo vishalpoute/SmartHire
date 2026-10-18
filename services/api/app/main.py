@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
+from app.accounts import FirestoreAccountStore
+from app.accounts import router as account_router
 from app.auth import FirebaseTokenVerifier, Identity, require_identity
 from app.body_limit import RequestBodyLimit
 from app.errors import ApiError
@@ -20,13 +22,15 @@ logger = logging.getLogger("smarthire.api")
 
 
 def create_app(
-    settings: Settings | None = None, *, token_verifier=None, profile_store=None
+    settings: Settings | None = None, *, token_verifier=None, profile_store=None, account_store=None
 ) -> FastAPI:
     settings = settings or Settings.from_environment()
     api = FastAPI(title="SmartHire API", version="0.1.0")
     api.state.token_verifier = token_verifier or FirebaseTokenVerifier(settings)
     api.state.profile_limiter = ProfileRateLimiter()
     api.state.profile_store = profile_store or FirestoreProfileStore(settings)
+    api.state.account_store = account_store or FirestoreAccountStore(settings)
+    api.include_router(account_router)
     api.include_router(profile_router)
     api.add_middleware(RequestBodyLimit)
     if settings.allowed_origins:

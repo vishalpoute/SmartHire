@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from test_api import Verifier
-from test_profiles import Store
+from test_profiles import Accounts, Store
 
 from app.errors import ApiError
 from app.main import create_app
@@ -42,6 +42,7 @@ def test_throttled_requests_never_reach_profile_store_and_return_retry_after():
         Settings(allowed_origins=["https://example.com"]),
         token_verifier=Verifier({"uid": "one", "email_verified": True}),
         profile_store=store,
+        account_store=Accounts(),
     )
     api.state.profile_limiter = ProfileRateLimiter(limit=1)
     with TestClient(api) as client:

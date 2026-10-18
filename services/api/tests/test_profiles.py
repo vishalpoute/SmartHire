@@ -6,12 +6,18 @@ import pytest
 from fastapi.testclient import TestClient
 from test_api import Verifier
 
+from app.accounts import Account
 from app.main import create_app
 from app.profiles import FirestoreProfileStore, Profile, ProfileInput
 from app.settings import Settings
 
 NOW = datetime(2026, 10, 17, tzinfo=UTC)
 BODY = {"display_name": "Demo Seeker", "headline": "Mobile developer", "skills": ["Dart"]}
+
+
+class Accounts:
+    def get(self, uid):
+        return Account(uid=uid)
 
 
 class Store:
@@ -34,6 +40,7 @@ def client_for(store, uid="one", verified=True):
         create_app(
             Settings(),
             profile_store=store,
+            account_store=Accounts(),
             token_verifier=Verifier({"uid": uid, "email_verified": verified}),
         )
     )

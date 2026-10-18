@@ -71,3 +71,5 @@ Security follow-up: concurrent profile requests share one account budget; browse
 - Backend CI runs pinned Bandit static analysis on application code; all workflows request read-only repository contents permission. This complements authorization tests and manual review.
 
 - Credential-safe manual two-account live profile checker added, with explicit disposable-profile write consent and regression checks; real authenticated acceptance remains pending.
+
+- Server-owned account status endpoint and suspension checks before profile access, with fail-closed datastore handling and role-claim/ownership escalation tests. Live authenticated account/profile checks remain pending; no administrative mutation interface exists yet.

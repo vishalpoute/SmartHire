@@ -32,7 +32,7 @@ Live Firebase token verification, emulator integration, live persistence and Ren
 
 ## Private profile contract
 
-`GET /api/v1/profile` and `PUT /api/v1/profile` require a verified Firebase email. Both select the owner from the verified token; they accept no owner or role parameter. GET returns 404 before onboarding. PUT is a full replacement of editable fields: `display_name` (2–80 trimmed characters), `headline` (up to 120), `location` (up to 80), and `skills` (up to 30 strings, each 1–40 characters). Skills are trimmed and deduplicated without assigning match scores. Omitted optional fields reset to empty values. Unknown fields, including roles, ownership, verification and timestamps, return 422. Responses include the server-selected UID and server write timestamp.
+`GET /api/v1/profile` and `PUT /api/v1/profile` require a verified Firebase email. Both select the owner from the verified token; they accept no owner or role parameter. GET returns 404 before onboarding. PUT is a full replacement of editable fields: `display_name` (2â€“80 trimmed characters), `headline` (up to 120), `location` (up to 80), and `skills` (up to 30 strings, each 1â€“40 characters). Skills are trimmed and deduplicated without assigning match scores. Omitted optional fields reset to empty values. Unknown fields, including roles, ownership, verification and timestamps, return 422. Responses include the server-selected UID and server write timestamp.
 
 The Firestore adapter writes only editable fields plus `updated_at` into `private_profiles/{escaped_uid}`, merging so unrelated server-managed metadata is preserved. Reads expose only the profile response fields. Concurrent edits currently use last-write-wins behavior; no version precondition is implemented. Missing configuration and datastore failures return 503 without diagnostic details. HTTP CORS includes PUT for explicitly configured origins.
 
@@ -49,3 +49,21 @@ HTTP request bodies are limited to 64 KiB before JSON parsing or identity verifi
 ## Profile throttling
 
 Verified accounts share a limit of 60 profile reads/writes per 60-second fixed window per API process. Throttled requests return 429 with Retry-After and do not access Firestore. The bounded 4096-account table fails closed with 503 when full and expires inactive windows. Client-supplied forwarding headers cannot select a bucket. This is per-process protection, resets on restart, and does not replace edge rate limiting, distributed quotas, slow-client protection or limits on invalid-token verification.
+
+
+## Server-owned account status
+
+`GET /api/v1/account` returns the authenticated owner's server-owned `role`
+(seeker/recruiter/admin), `account_status` (active/suspended), and
+`recruiter_approved` boolean. These fields come from `users/{escaped_uid}` in
+Firestore, never token role claims, query parameters, profile input, or a stored UID.
+A missing document defaults to an active seeker with no recruiter approval. Malformed
+server records and datastore failures return sanitized 503 responses. No client endpoint
+can create privileged roles, approve recruiters, suspend accounts or edit this record.
+Client Firestore rules remain deny-all; administrative mutation/auditing is a later milestone.
+
+Both profile reads and writes now check server suspension after verified-email and rate
+checks and before profile storage. Suspended users receive 403; they can still read their
+own account status. Account-status reads share the existing per-account request budget.
+These checks do not yet implement recruiter job publishing or admin moderation permissions.
+Isolated tests verify the policy; successful live authenticated checks remain pending.

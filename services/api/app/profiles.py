@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from google.cloud import firestore
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.accounts import active_account
 from app.auth import Identity, require_identity
 from app.errors import ApiError
 from app.settings import Settings
@@ -100,6 +101,7 @@ def verified_identity(
             403, "email_verification_required", "Verify your email before using your profile."
         )
     request.app.state.profile_limiter.check(identity.uid)
+    active_account(request, identity)
     return identity
 
 
