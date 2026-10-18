@@ -33,6 +33,8 @@
 
 - [x] Responsive profile editor component with validation, save feedback and preserved failed edits; route wiring and authenticated API integration remain pending
 
+- [x] Dio profile API adapter with bounded requests, session/ownership checks and safe errors; live Firebase token provider and editor route integration remain pending
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
