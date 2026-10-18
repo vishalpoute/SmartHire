@@ -13,6 +13,7 @@ from app.body_limit import RequestBodyLimit
 from app.errors import ApiError
 from app.profiles import FirestoreProfileStore
 from app.profiles import router as profile_router
+from app.rate_limit import ProfileRateLimiter
 from app.settings import Settings
 
 logger = logging.getLogger("smarthire.api")
@@ -24,6 +25,7 @@ def create_app(
     settings = settings or Settings.from_environment()
     api = FastAPI(title="SmartHire API", version="0.1.0")
     api.state.token_verifier = token_verifier or FirebaseTokenVerifier(settings)
+    api.state.profile_limiter = ProfileRateLimiter()
     api.state.profile_store = profile_store or FirestoreProfileStore(settings)
     api.include_router(profile_router)
     api.add_middleware(RequestBodyLimit)
@@ -72,7 +74,10 @@ def create_app(
 
     @api.exception_handler(ApiError)
     async def handle_api_error(request: Request, error: ApiError):
-        return error_response(request, error.status, error.code, error.message)
+        response = error_response(request, error.status, error.code, error.message)
+        if error.retry_after is not None:
+            response.headers["Retry-After"] = str(error.retry_after)
+        return response
 
     @api.exception_handler(RequestValidationError)
     async def handle_validation_error(request: Request, error: RequestValidationError):

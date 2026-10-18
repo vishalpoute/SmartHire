@@ -45,6 +45,8 @@ Current target: validated MVP by 2 November 2026. See [delivery plan](delivery-p
 
 - [x] API request-byte limit before JSON/auth processing, including chunked and misleading-length regression coverage
 
+- [x] Bounded per-process verified-account profile throttling with Retry-After; edge/distributed abuse controls remain pending
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.

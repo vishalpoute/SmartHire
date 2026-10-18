@@ -45,3 +45,7 @@ The root [Render blueprint](../../render.yaml) and [backend deployment runbook](
 ## Request size boundary
 
 HTTP request bodies are limited to 64 KiB before JSON parsing or identity verification. Actual received bytes are counted even when Content-Length is missing or misleading. Oversized input returns a sanitized 413 with request tracing and configured CORS; malformed lengths return 400. This boundary currently applies to all API routes. Future resume upload endpoints need a separate bounded streaming policy. Rate limiting and slow-client protection remain separate deployment requirements.
+
+## Profile throttling
+
+Verified accounts share a limit of 60 profile reads/writes per 60-second fixed window per API process. Throttled requests return 429 with Retry-After and do not access Firestore. The bounded 4096-account table fails closed with 503 when full and expires inactive windows. Client-supplied forwarding headers cannot select a bucket. This is per-process protection, resets on restart, and does not replace edge rate limiting, distributed quotas, slow-client protection or limits on invalid-token verification.

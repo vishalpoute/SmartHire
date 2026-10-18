@@ -92,11 +92,14 @@ class FirestoreProfileStore:
             ) from None
 
 
-def verified_identity(identity: Annotated[Identity, Depends(require_identity)]) -> Identity:
+def verified_identity(
+    request: Request, identity: Annotated[Identity, Depends(require_identity)]
+) -> Identity:
     if not identity.email_verified:
         raise ApiError(
             403, "email_verification_required", "Verify your email before using your profile."
         )
+    request.app.state.profile_limiter.check(identity.uid)
     return identity
 
 
