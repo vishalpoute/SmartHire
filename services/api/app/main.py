@@ -12,6 +12,8 @@ from app.accounts import FirestoreAccountStore
 from app.accounts import router as account_router
 from app.auth import FirebaseTokenVerifier, Identity, require_identity
 from app.body_limit import RequestBodyLimit
+from app.companies import FirestoreCompanyStore
+from app.companies import router as company_router
 from app.errors import ApiError
 from app.profiles import FirestoreProfileStore
 from app.profiles import router as profile_router
@@ -22,7 +24,12 @@ logger = logging.getLogger("smarthire.api")
 
 
 def create_app(
-    settings: Settings | None = None, *, token_verifier=None, profile_store=None, account_store=None
+    settings: Settings | None = None,
+    *,
+    token_verifier=None,
+    profile_store=None,
+    account_store=None,
+    company_store=None,
 ) -> FastAPI:
     settings = settings or Settings.from_environment()
     api = FastAPI(title="SmartHire API", version="0.1.0")
@@ -30,6 +37,8 @@ def create_app(
     api.state.profile_limiter = ProfileRateLimiter()
     api.state.profile_store = profile_store or FirestoreProfileStore(settings)
     api.state.account_store = account_store or FirestoreAccountStore(settings)
+    api.state.company_store = company_store or FirestoreCompanyStore(settings)
+    api.include_router(company_router)
     api.include_router(account_router)
     api.include_router(profile_router)
     api.add_middleware(RequestBodyLimit)

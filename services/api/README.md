@@ -32,7 +32,7 @@ Live Firebase token verification, emulator integration, live persistence and Ren
 
 ## Private profile contract
 
-`GET /api/v1/profile` and `PUT /api/v1/profile` require a verified Firebase email. Both select the owner from the verified token; they accept no owner or role parameter. GET returns 404 before onboarding. PUT is a full replacement of editable fields: `display_name` (2â€“80 trimmed characters), `headline` (up to 120), `location` (up to 80), and `skills` (up to 30 strings, each 1â€“40 characters). Skills are trimmed and deduplicated without assigning match scores. Omitted optional fields reset to empty values. Unknown fields, including roles, ownership, verification and timestamps, return 422. Responses include the server-selected UID and server write timestamp.
+`GET /api/v1/profile` and `PUT /api/v1/profile` require a verified Firebase email. Both select the owner from the verified token; they accept no owner or role parameter. GET returns 404 before onboarding. PUT is a full replacement of editable fields: `display_name` (2Ã¢â‚¬â€œ80 trimmed characters), `headline` (up to 120), `location` (up to 80), and `skills` (up to 30 strings, each 1Ã¢â‚¬â€œ40 characters). Skills are trimmed and deduplicated without assigning match scores. Omitted optional fields reset to empty values. Unknown fields, including roles, ownership, verification and timestamps, return 422. Responses include the server-selected UID and server write timestamp.
 
 The Firestore adapter writes only editable fields plus `updated_at` into `private_profiles/{escaped_uid}`, merging so unrelated server-managed metadata is preserved. Reads expose only the profile response fields. Concurrent edits currently use last-write-wins behavior; no version precondition is implemented. Missing configuration and datastore failures return 503 without diagnostic details. HTTP CORS includes PUT for explicitly configured origins.
 
@@ -67,3 +67,23 @@ checks and before profile storage. Suspended users receive 403; they can still r
 own account status. Account-status reads share the existing per-account request budget.
 These checks do not yet implement recruiter job publishing or admin moderation permissions.
 Isolated tests verify the policy; successful live authenticated checks remain pending.
+
+
+## Private company onboarding API
+
+`GET/PUT /api/v1/company` select one private company profile per authenticated owner.
+Both require verified email and an active server account, and share the account request
+budget. GET returns 404 before onboarding. PUT accepts only `name` (2–120 trimmed
+characters), `description` (up to 2000), `location` (up to 80), and optional `website`
+(up to 500; HTTPS without embedded credentials, whitespace or invalid ports).
+Website addresses are stored as text and never fetched by this API.
+
+The server writes `company_profiles/{escaped_uid}` and a server timestamp. Each save
+sets `approval_status` to pending, including edits to previously approved profiles;
+privileged account roles/approval are never assigned by this endpoint. Reads expose only
+company fields, approval status, owner and timestamp. Owner/status/role fields in input
+are rejected. Client Firestore rules remain deny-all. This is private onboarding only:
+company UI, moderation/audit mutations, and job publishing are not yet implemented.
+Future publishing must check both server recruiter permission and current company approval;
+an earlier approved account must not bypass review of an edited company profile.
+Live authenticated company persistence remains unverified.
