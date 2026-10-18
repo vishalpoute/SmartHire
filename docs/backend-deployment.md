@@ -17,3 +17,7 @@ Configure server Application Default Credentials through Render's secret-file fa
 A successful `/health` response means the process is running; it does not confirm identity or database readiness. Before connecting the Flutter editor, verify unauthenticated 401 responses, verified-email enforcement, two-account isolation, profile round trips, CORS behavior and safe failure handling on the actual hosted service. Record the actual URL and deployed Git SHA only after observing deployment success. The API is live at https://smarthire-api-ep83.onrender.com from commit `972a159`. Render reported Live, `/health` returned 200, and unauthenticated identity/profile requests returned 401. Server credentials and authenticated persistence are still unconfigured/unverified.
 
 Official references: https://render.com/docs/deploy-fastapi and https://render.com/docs/blueprint-spec
+
+## Flutter editor connection
+
+The protected `/profile/edit` route is available from the account profile. Without `PROFILE_API_ORIGIN`, verified users see a saving-unavailable state. Only enable this HTTPS origin build definition after server credentials, verified-user requests and profile isolation have passed on the live API. Keep it absent from the current hosted client configuration until then. The session-bound repository refreshes Firebase tokens, rejects ownership changes and is disposed with its editor route. Tests inject repositories without making live profile writes.

@@ -10,6 +10,9 @@ import 'features/auth/domain/auth_repository.dart';
 import 'features/auth/data/firebase_auth_repository.dart';
 import 'features/auth/presentation/session_cubit.dart';
 import 'features/profile/presentation/profile_page.dart';
+import 'features/profile/presentation/profile_edit_page.dart';
+import 'features/profile/domain/profile_repository.dart';
+import 'features/profile/data/firebase_profile_session.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/presentation/jobs_cubit.dart';
 import 'features/jobs/presentation/job_discovery_page.dart';
@@ -21,10 +24,32 @@ class SmartHireApp extends StatelessWidget {
     this.firebaseAvailability = FirebaseAvailability.preview,
     this.authRepository,
     this.initialRoute,
+    this.profileRepositoryFactory,
   });
   final FirebaseAvailability firebaseAvailability;
   final AuthRepository? authRepository;
   final String? initialRoute;
+  final ProfileRepository Function(String uid)? profileRepositoryFactory;
+
+  ProfileRepository Function(String)? get _profiles {
+    if (profileRepositoryFactory != null) return profileRepositoryFactory;
+    const origin = String.fromEnvironment('PROFILE_API_ORIGIN');
+    final uri = Uri.tryParse(origin);
+    if (firebaseAvailability != FirebaseAvailability.ready ||
+        uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        (uri.path.isNotEmpty && uri.path != '/')) {
+      return null;
+    }
+    return (uid) => FirebaseProfileSession(
+      FirebaseAuth.instance,
+      ownerUid: uid,
+    ).repository(uri);
+  }
 
   @override
   Widget build(BuildContext context) => RepositoryProvider<AuthRepository?>(
@@ -79,6 +104,8 @@ class SmartHireApp extends StatelessWidget {
         },
         routes: {
           AppRoutes.profile: (_) => const ProfilePage(),
+          AppRoutes.profileEdit: (_) =>
+              ProfileEditPage(repositoryFactory: _profiles),
           AppRoutes.discover: (_) => const JobDiscoveryPage(),
           AppRoutes.signIn: (context) => AccountPage(
             mode: AccountMode.signIn,

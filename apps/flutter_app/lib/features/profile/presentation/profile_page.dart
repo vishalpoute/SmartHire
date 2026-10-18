@@ -55,13 +55,19 @@ class ProfilePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Profile editing, skills and resume uploads are not available yet. No profile data is stored by this page.',
+                      'Add your profile details and skills when profile saving is available. Resume uploads are coming later.',
                     ),
                     const SizedBox(height: 12),
                     const Text(
                       'Email verification does not grant recruiter or administrator permissions. Job listings remain fictional samples.',
                     ),
                     const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.profileEdit),
+                      child: const Text('Edit profile'),
+                    ),
+                    const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: () =>
                           Navigator.pushNamed(context, AppRoutes.signIn),

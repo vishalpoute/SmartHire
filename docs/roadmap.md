@@ -37,6 +37,8 @@
 
 - [x] Firebase profile token provider bound to the signed-in owner, with refreshed tokens, verification checks and account-change rejection; editor routing and live persistence remain pending
 
+- [x] Protected editor route with verification gate, initial-load retry and session-scoped disposal; live saving remains disabled until server identity and persistence are verified
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
