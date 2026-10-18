@@ -35,6 +35,8 @@
 
 - [x] Dio profile API adapter with bounded requests, session/ownership checks and safe errors; live Firebase token provider and editor route integration remain pending
 
+- [x] Firebase profile token provider bound to the signed-in owner, with refreshed tokens, verification checks and account-change rejection; editor routing and live persistence remain pending
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
