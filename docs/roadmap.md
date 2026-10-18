@@ -27,7 +27,7 @@ Current target: validated MVP by 2 November 2026. See [delivery plan](delivery-p
 
 - [x] Private profile API contract and Firestore adapter with verified-email/ownership checks and isolated persistence/validation tests (live deployment pending)
 
-- [x] Free Render API service blueprint and hosting runbook; local startup smoke check passed, Render service now live at commit 972a159 with health 200/protected routes 401; server credentials and authenticated persistence remain pending
+- [x] Free Render API service blueprint and hosting runbook; local startup smoke check passed, Render service live with health 200/protected routes 401; dedicated server credentials installed and Firestore readiness verified; authenticated profile persistence remains pending
 
 - [x] Immutable Flutter profile payload/response contract, editor field validation and malformed-response checks; editor and authenticated persistence remain pending
 
@@ -65,3 +65,5 @@ Each milestone can span several commits. Prefer a small verified feature over an
 ## Integration prerequisites
 
 Firebase development/production project IDs and client configuration, Storage billing setup, and Render deployment access will be needed before live integration. Request them at the appropriate milestone. Never put service-account credentials in a client or repository.
+
+Security follow-up: concurrent profile requests share one account budget; browser clients can read Retry-After on throttled responses. Authenticated live profile saving remains disabled pending verification.

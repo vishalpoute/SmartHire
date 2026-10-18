@@ -35,7 +35,7 @@ def create_app(
             allow_origins=list(settings.allowed_origins),
             allow_methods=["GET", "PUT"],
             allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
-            expose_headers=["X-Request-ID"],
+            expose_headers=["X-Request-ID", "Retry-After"],
         )
 
     @api.middleware("http")

@@ -39,7 +39,7 @@ def test_capacity_is_bounded_and_fails_closed_until_expiration():
 def test_throttled_requests_never_reach_profile_store_and_return_retry_after():
     store = Store()
     api = create_app(
-        Settings(),
+        Settings(allowed_origins=["https://example.com"]),
         token_verifier=Verifier({"uid": "one", "email_verified": True}),
         profile_store=store,
     )
@@ -47,9 +47,31 @@ def test_throttled_requests_never_reach_profile_store_and_return_retry_after():
     with TestClient(api) as client:
         headers = {"Authorization": "Bearer test"}
         assert client.get("/api/v1/profile", headers=headers).status_code == 404
-        response = client.get("/api/v1/profile", headers={**headers, "X-Forwarded-For": "spoofed"})
+        response = client.get(
+            "/api/v1/profile",
+            headers={**headers, "X-Forwarded-For": "spoofed", "Origin": "https://example.com"},
+        )
         assert response.status_code == 429
         assert int(response.headers["Retry-After"]) >= 1
+        assert "Retry-After" in response.headers["Access-Control-Expose-Headers"]
         assert response.json()["requestId"] == response.headers["X-Request-ID"]
         assert client.get("/health").status_code == 200
     assert store.calls == ["one"]
+
+
+def test_concurrent_requests_share_one_account_budget():
+    from concurrent.futures import ThreadPoolExecutor
+
+    limiter = ProfileRateLimiter(limit=10)
+
+    def request(_):
+        try:
+            limiter.check("one")
+            return 200
+        except ApiError as error:
+            return error.status
+
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        statuses = list(pool.map(request, range(100)))
+    assert statuses.count(200) == 10
+    assert statuses.count(429) == 90

@@ -18,8 +18,9 @@ class ProfileRateLimiter:
         self.lock = Lock()
 
     def check(self, uid):
-        now = self.clock()
         with self.lock:
+            # Read time under the lock so concurrent insertion order stays chronological.
+            now = self.clock()
             # Insertion order is window-start order; never retain unbounded identities.
             while self.accounts:
                 first_uid, (started, _) = next(iter(self.accounts.items()))
