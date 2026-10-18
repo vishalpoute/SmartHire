@@ -12,11 +12,10 @@ class WorkWindowTests(unittest.TestCase):
         )):
             return work_window.evaluate(datetime(2026, 10, 18, hour, tzinfo=work_window.IST))
 
-    def test_workday_boundaries(self):
-        self.assertFalse(self.evaluate(8)['due'])
-        self.assertTrue(self.evaluate(9)['due'])
-        self.assertTrue(self.evaluate(17)['due'])
-        self.assertFalse(self.evaluate(18)['due'])
+    def test_all_hours_are_allowed(self):
+        for hour in range(24):
+            with self.subTest(hour=hour):
+                self.assertTrue(self.evaluate(hour)['due'])
 
     def test_no_daily_quota_or_gap(self):
         timestamps = '\n'.join(['2026-10-18T16:59:59+05:30'] * 20)

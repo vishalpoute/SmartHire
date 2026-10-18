@@ -1,4 +1,4 @@
-"""Check the user's work hours; commits have no quota or minimum spacing."""
+"""Check readable Git history; work has no hour, quota or spacing restrictions."""
 import json
 import subprocess
 from datetime import datetime, timedelta, timezone
@@ -21,10 +21,9 @@ def evaluate(now=None):
                    for line in result.stdout.splitlines() if line.strip()]
     except ValueError:
         return {'due': False, 'reason': 'git_history_unavailable'}
-    in_window = 9 <= now.hour < 18
-    return {'due': in_window,
+    return {'due': True,
             'commits_today': sum(commit.date() == now.date() for commit in commits),
-            'reason': 'ready' if in_window else 'outside_work_hours'}
+            'reason': 'ready'}
 
 
 if __name__ == '__main__':
