@@ -15,6 +15,8 @@ from app.body_limit import RequestBodyLimit
 from app.companies import FirestoreCompanyStore
 from app.companies import router as company_router
 from app.errors import ApiError
+from app.jobs import FirestoreJobStore
+from app.jobs import router as job_router
 from app.profiles import FirestoreProfileStore
 from app.profiles import router as profile_router
 from app.rate_limit import ProfileRateLimiter
@@ -30,6 +32,7 @@ def create_app(
     profile_store=None,
     account_store=None,
     company_store=None,
+    job_store=None,
 ) -> FastAPI:
     settings = settings or Settings.from_environment()
     api = FastAPI(title="SmartHire API", version="0.1.0")
@@ -38,6 +41,8 @@ def create_app(
     api.state.profile_store = profile_store or FirestoreProfileStore(settings)
     api.state.account_store = account_store or FirestoreAccountStore(settings)
     api.state.company_store = company_store or FirestoreCompanyStore(settings)
+    api.state.job_store = job_store or FirestoreJobStore(settings)
+    api.include_router(job_router)
     api.include_router(company_router)
     api.include_router(account_router)
     api.include_router(profile_router)
@@ -46,7 +51,7 @@ def create_app(
         api.add_middleware(
             CORSMiddleware,
             allow_origins=list(settings.allowed_origins),
-            allow_methods=["GET", "PUT"],
+            allow_methods=["GET", "PUT", "POST"],
             allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
             expose_headers=["X-Request-ID", "Retry-After"],
         )

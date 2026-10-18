@@ -77,3 +77,5 @@ Security follow-up: concurrent profile requests share one account budget; browse
 - Private company onboarding GET/PUT API with owner-selected documents, verified/active-account checks, bounded fields, safe datastore errors and review reset on edits. Isolated contract/security tests pass; company UI, moderation and live authenticated persistence remain pending.
 
 - Profile client now distinguishes suspended accounts, email-verification requirements, generic access denial and throttling with fixed safe messages; server diagnostics remain hidden.
+
+- Private job draft creation and owner-only reads, requiring both server recruiter approval and current owned-company approval to create. Generated IDs, server lifecycle metadata, bounded fields and authorization regression tests are implemented. Draft editing/publication/discovery/UI and live authenticated acceptance remain pending.

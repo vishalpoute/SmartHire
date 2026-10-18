@@ -87,3 +87,26 @@ company UI, moderation/audit mutations, and job publishing are not yet implement
 Future publishing must check both server recruiter permission and current company approval;
 an earlier approved account must not bypass review of an edited company profile.
 Live authenticated company persistence remains unverified.
+
+
+## Private recruiter job drafts
+
+`POST /api/v1/jobs` creates a private draft with a generated ID, version 1 and server
+timestamps. It requires verified email, an active server account whose role is recruiter
+with recruiter approval, and that same owner's currently approved company profile. Token
+role claims and client/query ownership fields cannot grant access. Every request shares
+the bounded account request budget. Drafts accept a bounded title, description, location,
+work mode, employment type and required/preferred skill lists; incomplete requirements are
+allowed while drafting. Unknown lifecycle/ownership/version fields are rejected.
+
+`GET /api/v1/jobs/{id}` reads only a verified active user's own draft. Missing and foreign
+IDs both return 404. IDs must be 32 lowercase hex characters. Firestore writes use create
+semantics, bounded calls and server timestamps; client Firestore rules remain deny-all.
+The private record links to `company_owner_uid`; this is not the public listing contract.
+A stable public company/listing representation must be defined before public browsing.
+
+Draft edits, version-conflict handling, publication/closing, indexes, public discovery and
+recruiter UI remain pending. No draft is published by these endpoints. Publication must
+recheck account/company approval atomically with the transition and validate complete
+requirements; earlier approval must not bypass later suspension or company edits.
+Live authenticated draft creation/ownership acceptance remains unverified.
