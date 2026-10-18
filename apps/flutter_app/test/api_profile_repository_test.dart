@@ -130,6 +130,35 @@ void main() {
       );
     }
   });
+  test('access failures distinguish suspension, verification and throttling safely', () async {
+    for (final entry in [
+      (403, 'account_suspended', 'Your account is suspended. Contact support.'),
+      (
+        403,
+        'email_verification_required',
+        'Verify your email before editing your profile.',
+      ),
+      (403, 'unknown', 'You do not have access to this profile.'),
+      (
+        429,
+        'profile_rate_limited',
+        'Too many profile requests. Please wait a minute and try again.',
+      ),
+    ]) {
+      adapter.status = entry.$1;
+      adapter.body = {'code': entry.$2, 'message': 'private diagnostic'};
+      await expectLater(
+        repo.load(),
+        throwsA(
+          isA<ProfileFailure>().having(
+            (failure) => failure.message,
+            'safe actionable message',
+            entry.$3,
+          ),
+        ),
+      );
+    }
+  });
   test('insecure or credential-bearing destinations are rejected', () {
     for (final url in [
       'http://api.example.com',

@@ -106,8 +106,22 @@ class ApiProfileRepository implements ProfileRepository {
       if (status == 404 && method == 'GET') return null;
       if (status == 401) throw const ProfileFailure('Please sign in again.');
       if (status == 403) {
+        final data = response.data;
+        if (data is Map && data['code'] == 'account_suspended') {
+          throw const ProfileFailure(
+            'Your account is suspended. Contact support.',
+          );
+        }
+        if (data is Map && data['code'] == 'email_verification_required') {
+          throw const ProfileFailure(
+            'Verify your email before editing your profile.',
+          );
+        }
+        throw const ProfileFailure('You do not have access to this profile.');
+      }
+      if (status == 429) {
         throw const ProfileFailure(
-          'Verify your email before editing your profile.',
+          'Too many profile requests. Please wait a minute and try again.',
         );
       }
       if (status == 422) {

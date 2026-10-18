@@ -75,3 +75,5 @@ Security follow-up: concurrent profile requests share one account budget; browse
 - Server-owned account status endpoint and suspension checks before profile access, with fail-closed datastore handling and role-claim/ownership escalation tests. Live authenticated account/profile checks remain pending; no administrative mutation interface exists yet.
 
 - Private company onboarding GET/PUT API with owner-selected documents, verified/active-account checks, bounded fields, safe datastore errors and review reset on edits. Isolated contract/security tests pass; company UI, moderation and live authenticated persistence remain pending.
+
+- Profile client now distinguishes suspended accounts, email-verification requirements, generic access denial and throttling with fixed safe messages; server diagnostics remain hidden.
