@@ -24,6 +24,90 @@ class Profiles implements ProfileRepository {
 }
 
 void main() {
+  testWidgets('back preserves drafts until explicit discard', (tester) async {
+    final cubit = ProfileCubit(Profiles());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => Scaffold(
+                    appBar: AppBar(),
+                    body: BlocProvider.value(
+                      value: cubit,
+                      child: const ProfileEditor(),
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('Open editor'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open editor'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Ada');
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Discard unsaved changes?'), findsOneWidget);
+    await tester.tap(find.text('Keep editing'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ada'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard changes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Open editor'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+  });
+  testWidgets('successful save permits leaving without discard prompt', (
+    tester,
+  ) async {
+    final repo = Profiles()..fail = false;
+    final cubit = ProfileCubit(repo);
+    addTearDown(cubit.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => Scaffold(
+                    appBar: AppBar(),
+                    body: BlocProvider.value(
+                      value: cubit,
+                      child: const ProfileEditor(),
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('Open editor'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open editor'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Ada');
+    await tester.pump();
+    await tester.ensureVisible(find.text('Save profile'));
+    await tester.tap(find.text('Save profile'));
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Open editor'), findsOneWidget);
+    expect(find.text('Discard unsaved changes?'), findsNothing);
+  });
   for (final width in [360.0, 1440.0]) {
     testWidgets('editor validates and preserves failed edits at $width', (
       tester,

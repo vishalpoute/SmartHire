@@ -39,6 +39,8 @@
 
 - [x] Protected editor route with verification gate, initial-load retry and session-scoped disposal; live saving remains disabled until server identity and persistence are verified
 
+- [x] Profile-editor unsaved-edit back-navigation confirmation with explicit discard and saved-state reset; browser reload/tab closure protection remains out of scope
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
