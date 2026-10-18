@@ -43,6 +43,8 @@ Current target: validated MVP by 2 November 2026. See [delivery plan](delivery-p
 
 - [x] Profile-editor unsaved-edit back-navigation confirmation with explicit discard and saved-state reset; browser reload/tab closure protection remains out of scope
 
+- [x] API request-byte limit before JSON/auth processing, including chunked and misleading-length regression coverage
+
 ## Next milestones
 
 1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.

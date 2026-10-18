@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
 from app.auth import FirebaseTokenVerifier, Identity, require_identity
+from app.body_limit import RequestBodyLimit
 from app.errors import ApiError
 from app.profiles import FirestoreProfileStore
 from app.profiles import router as profile_router
@@ -25,6 +26,7 @@ def create_app(
     api.state.token_verifier = token_verifier or FirebaseTokenVerifier(settings)
     api.state.profile_store = profile_store or FirestoreProfileStore(settings)
     api.include_router(profile_router)
+    api.add_middleware(RequestBodyLimit)
     if settings.allowed_origins:
         api.add_middleware(
             CORSMiddleware,

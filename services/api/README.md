@@ -41,3 +41,7 @@ The client is lazy, uses server Application Default Credentials and explicit `FI
 ## Hosting
 
 The root [Render blueprint](../../render.yaml) and [backend deployment runbook](../../docs/backend-deployment.md) describe the free service and remaining server configuration. The blueprint is prepared but has not been applied. Local startup returned health 200 and unauthenticated identity/profile 401 responses.
+
+## Request size boundary
+
+HTTP request bodies are limited to 64 KiB before JSON parsing or identity verification. Actual received bytes are counted even when Content-Length is missing or misleading. Oversized input returns a sanitized 413 with request tracing and configured CORS; malformed lengths return 400. This boundary currently applies to all API routes. Future resume upload endpoints need a separate bounded streaming policy. Rate limiting and slow-client protection remain separate deployment requirements.
