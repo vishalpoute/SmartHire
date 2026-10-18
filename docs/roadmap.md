@@ -67,3 +67,5 @@ Each milestone can span several commits. Prefer a small verified feature over an
 Firebase development/production project IDs and client configuration, Storage billing setup, and Render deployment access will be needed before live integration. Request them at the appropriate milestone. Never put service-account credentials in a client or repository.
 
 Security follow-up: concurrent profile requests share one account budget; browser clients can read Retry-After on throttled responses. Authenticated live profile saving remains disabled pending verification.
+
+- Backend CI runs pinned Bandit static analysis on application code; all workflows request read-only repository contents permission. This complements authorization tests and manual review.
