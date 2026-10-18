@@ -1,8 +1,8 @@
 # Working agreements
 
-Continue through the roadmap in coherent, tested increments. Use randomized sessions between 9 AM and 6 PM Asia/Kolkata. Target six to seven useful commits per day, with a maximum of seven. Keep at least 60 minutes between actual commit timestamps; the helper persists randomized targets with 60–80 minute gaps and a first session between 9:00 and 9:40 AM. Do not commit at or after 6 PM. Validation may reduce the daily total. Never backdate, create empty activity commits, or skip checks to meet a quota.
+Complete coherent, tested milestones toward the 2 November 2026 MVP target. The user removed daily commit quotas and minimum spacing on 18 October 2026. Work remains scheduled between 9 AM and 6 PM Asia/Kolkata. Make useful commits as validation permits; never backdate, create empty activity commits or skip checks to meet a target.
 
-Run `python scripts/work_window.py` before starting a scheduled session and again before committing. It reads Git history and persists randomized session targets in ignored local state. When not due, leave the repository alone. Do not run concurrent sessions in this checkout.
+Run `python scripts/work_window.py` at session start and before committing. The helper checks work hours and readable Git history; old randomized daily targets are no longer used. Avoid overlapping sessions in this checkout. Prioritize end-to-end acceptance criteria using docs/delivery-plan.md, and include security review in relevant milestones.
 
 Use repository-local Git identity `Vishal Poute <159309295+vishalpoute@users.noreply.github.com>`. No co-author trailer is required. Do not claim the project was built without assistance.
 

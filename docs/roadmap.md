@@ -1,5 +1,7 @@
 # Delivery roadmap
 
+Current target: validated MVP by 2 November 2026. See [delivery plan](delivery-plan.md) for sequencing and security gates. Daily commit quotas and minimum spacing were removed at the user's request on 18 October.
+
 ## Completed
 
 - [x] Android/Web scaffold and feature-first project structure
