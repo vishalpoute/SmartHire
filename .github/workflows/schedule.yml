@@ -13,3 +13,4 @@ jobs:
         with:
           python-version: '3.14'
       - run: python scripts/test_work_window.py
+      - run: python scripts/test_live_profiles.py

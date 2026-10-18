@@ -69,3 +69,5 @@ Firebase development/production project IDs and client configuration, Storage bi
 Security follow-up: concurrent profile requests share one account budget; browser clients can read Retry-After on throttled responses. Authenticated live profile saving remains disabled pending verification.
 
 - Backend CI runs pinned Bandit static analysis on application code; all workflows request read-only repository contents permission. This complements authorization tests and manual review.
+
+- Credential-safe manual two-account live profile checker added, with explicit disposable-profile write consent and regression checks; real authenticated acceptance remains pending.
