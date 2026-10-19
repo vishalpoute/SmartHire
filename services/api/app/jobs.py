@@ -34,6 +34,14 @@ class JobDraftInput(BaseModel):
         return ProfileInput.clean_skills(values)
 
 
+class PublicJob(JobDraftInput):
+    """Explicit allowlist: owner identifiers and private lifecycle metadata stay private."""
+
+    id: str
+    company_name: str
+    published_at: datetime
+
+
 class JobDraftUpdate(JobDraftInput):
     expected_version: int = Field(ge=1, le=2147483647)
 
@@ -168,6 +176,77 @@ class FirestoreJobStore:
             if self.client is None:
                 self.client = firestore.Client(project=self.settings.firebase_project_id)
         return self.client.collection("jobs")
+
+    def get_public(self, job_id):
+        try:
+            job_ref = self.collection().document(job_id)
+
+            @firestore.transactional
+            def read(transaction):
+                snapshot = job_ref.get(transaction=transaction, timeout=10, retry=None)
+                data = snapshot.to_dict() if snapshot.exists else None
+                if not data or data.get("status") != "published":
+                    return None
+                job = JobDraft(
+                    id=job_id,
+                    **{
+                        key: data[key]
+                        for key in JobDraft.model_fields
+                        if key != "id" and key in data
+                    },
+                )
+                if job.recruiter_uid != job.company_owner_uid:
+                    raise ValueError("Company owner mismatch")
+                owner_key = quote(job.recruiter_uid, safe="")
+                account = (
+                    self.client.collection("users")
+                    .document(owner_key)
+                    .get(transaction=transaction, timeout=10, retry=None)
+                )
+                company = (
+                    self.client.collection("company_profiles")
+                    .document(owner_key)
+                    .get(transaction=transaction, timeout=10, retry=None)
+                )
+                if not account.exists or not company.exists:
+                    return None
+                account_data, company_data = account.to_dict(), company.to_dict()
+                owner = Account(
+                    uid=job.recruiter_uid,
+                    **{
+                        key: account_data[key]
+                        for key in ("role", "account_status", "recruiter_approved")
+                        if key in account_data
+                    },
+                )
+                if (
+                    owner.account_status != "active"
+                    or owner.role != "recruiter"
+                    or not owner.recruiter_approved
+                ):
+                    return None
+                reviewed_company = CompanyProfile(
+                    owner_uid=job.recruiter_uid,
+                    **{
+                        key: company_data[key]
+                        for key in (*CompanyInput.model_fields, "approval_status", "updated_at")
+                        if key in company_data
+                    },
+                )
+                if reviewed_company.approval_status != "approved":
+                    return None
+                if job.published_at is None or not job.company_name:
+                    raise ValueError("Missing publication metadata")
+                return PublicJob(
+                    id=job_id,
+                    company_name=job.company_name,
+                    published_at=job.published_at,
+                    **{key: getattr(job, key) for key in JobDraftInput.model_fields},
+                )
+
+            return read(self.client.transaction(max_attempts=1))
+        except Exception:  # noqa: BLE001 - no private record details in public failures.
+            raise ApiError(503, "jobs_unavailable", "Jobs are temporarily unavailable.") from None
 
     def create(self, uid, draft):
         try:
@@ -405,3 +484,25 @@ def close_owned_job(
     command: JobVersionInput,
 ):
     return request.app.state.job_store.close_owned(identity.uid, job_id, command.expected_version)
+
+
+public_router = APIRouter(prefix="/api/v1/public/jobs", tags=["public jobs"])
+
+
+@public_router.get("/{job_id}", response_model=PublicJob)
+def read_public_job(request: Request, job_id: JobId):
+    # One shared process budget bounds anonymous datastore work without trusting
+    # caller-controlled IP headers or retaining anonymous identifiers.
+    try:
+        request.app.state.public_job_limiter.check("public-job-details")
+    except ApiError as error:
+        raise ApiError(
+            error.status,
+            "jobs_busy",
+            "Jobs are busy. Please retry shortly.",
+            retry_after=error.retry_after,
+        ) from None
+    job = request.app.state.job_store.get_public(job_id)
+    if job is None:
+        raise ApiError(404, "job_not_found", "Job is unavailable.")
+    return job

@@ -16,6 +16,7 @@ from app.companies import FirestoreCompanyStore
 from app.companies import router as company_router
 from app.errors import ApiError
 from app.jobs import FirestoreJobStore
+from app.jobs import public_router as public_job_router
 from app.jobs import router as job_router
 from app.profiles import FirestoreProfileStore
 from app.profiles import router as profile_router
@@ -38,11 +39,13 @@ def create_app(
     api = FastAPI(title="SmartHire API", version="0.1.0")
     api.state.token_verifier = token_verifier or FirebaseTokenVerifier(settings)
     api.state.profile_limiter = ProfileRateLimiter()
+    api.state.public_job_limiter = ProfileRateLimiter(limit=120, max_accounts=1)
     api.state.profile_store = profile_store or FirestoreProfileStore(settings)
     api.state.account_store = account_store or FirestoreAccountStore(settings)
     api.state.company_store = company_store or FirestoreCompanyStore(settings)
     api.state.job_store = job_store or FirestoreJobStore(settings)
     api.include_router(job_router)
+    api.include_router(public_job_router)
     api.include_router(company_router)
     api.include_router(account_router)
     api.include_router(profile_router)

@@ -85,3 +85,5 @@ Security follow-up: concurrent profile requests share one account budget; browse
 - Explicit job publication with transactional owner/version/account/company rechecks, completeness validation, server timestamps and an atomic private audit event. Contract/security tests pass; public discovery, recruiter UI and authenticated live publication remain pending.
 
 - Owned published-job closure with strict expected versions, transactional ownership/account rechecks and an atomic private audit event. Active owners may withdraw vacancies after recruiter/company approval is revoked; drafts, suspended jobs and stale versions are rejected. API tests pass; recruiter UI and authenticated live closure remain pending.
+
+- Public job detail API uses an explicit field allowlist and consistent transactional visibility checks: only published jobs from currently active, approved recruiters and approved companies are returned. Hidden/missing records share a 404 response; datastore failures are safe. Anonymous reads have a shared 120/minute process budget. Listing pagination, Flutter integration, edge abuse controls and authenticated recruiter acceptance remain pending.
