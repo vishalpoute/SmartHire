@@ -59,7 +59,7 @@ class ProfilePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Email verification does not grant recruiter or administrator permissions. Job listings remain fictional samples.',
+                      'Email verification does not grant recruiter or administrator permissions.',
                     ),
                     const SizedBox(height: 24),
                     FilledButton(

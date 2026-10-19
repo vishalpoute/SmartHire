@@ -64,7 +64,7 @@ class AccountSummary extends StatelessWidget {
                   ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Jobs are still sample listings. Profiles, applications and recruiter approval are coming next.',
+                  'Profiles, applications and recruiter approval are being developed.',
                 ),
                 if (state.message != null)
                   Padding(

@@ -191,7 +191,7 @@ class _AccountPageState extends State<AccountPage> {
                               child: Text(
                                 _actions == null
                                     ? 'Account preview · Firebase connection is coming next. No account will be created and no details will be sent.'
-                                    : 'Secure email sign-in · Job listings are still samples. Profile setup and recruiter approval are coming next.',
+                                    : 'Secure email sign-in · Profile setup and recruiter approval are coming next.',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF756336),
