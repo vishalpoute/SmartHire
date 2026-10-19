@@ -6,9 +6,10 @@ from typing import Annotated, Literal
 from urllib.parse import quote
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Path, Request
+from fastapi import APIRouter, Depends, Path, Query, Request
 from google.api_core.exceptions import Aborted, Conflict, FailedPrecondition, NotFound
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.accounts import Account, active_account
@@ -40,6 +41,11 @@ class PublicJob(JobDraftInput):
     id: str
     company_name: str
     published_at: datetime
+
+
+class PublicJobPage(BaseModel):
+    items: list[PublicJob]
+    next_cursor: str | None = None
 
 
 class JobDraftUpdate(JobDraftInput):
@@ -246,6 +252,33 @@ class FirestoreJobStore:
 
             return read(self.client.transaction(max_attempts=1))
         except Exception:  # noqa: BLE001 - no private record details in public failures.
+            raise ApiError(503, "jobs_unavailable", "Jobs are temporarily unavailable.") from None
+
+    def list_public(self, page_size, cursor=None):
+        try:
+            collection = self.collection()
+            query = collection.where(filter=FieldFilter("status", "==", "published")).order_by(
+                "__name__"
+            )
+            if cursor is not None:
+                query = query.start_after({"__name__": collection.document(cursor)})
+            candidates = list(query.limit(page_size + 1).get(timeout=10, retry=None))
+            scanned = candidates[:page_size]
+            # Recheck visibility, including current moderation, for each bounded candidate.
+            # Sparse/empty pages can have a continuation; never scan an unbounded set
+            # to fill a page after approval revocations.
+            items = []
+            for candidate in scanned:
+                job = self.get_public(candidate.id)
+                if job is not None:
+                    items.append(job)
+            return PublicJobPage(
+                items=items,
+                next_cursor=scanned[-1].id if len(candidates) > page_size else None,
+            )
+        except ApiError:
+            raise
+        except Exception:  # noqa: BLE001 - query/index diagnostics stay private.
             raise ApiError(503, "jobs_unavailable", "Jobs are temporarily unavailable.") from None
 
     def create(self, uid, draft):
@@ -506,3 +539,21 @@ def read_public_job(request: Request, job_id: JobId):
     if job is None:
         raise ApiError(404, "job_not_found", "Job is unavailable.")
     return job
+
+
+@public_router.get("", response_model=PublicJobPage)
+def list_public_jobs(
+    request: Request,
+    page_size: Annotated[int, Query(ge=1, le=10)] = 10,
+    cursor: Annotated[str | None, Query(pattern=r"^[a-f0-9]{32}$")] = None,
+):
+    try:
+        request.app.state.public_job_list_limiter.check("public-job-list")
+    except ApiError as error:
+        raise ApiError(
+            error.status,
+            "jobs_busy",
+            "Jobs are busy. Please retry shortly.",
+            retry_after=error.retry_after,
+        ) from None
+    return request.app.state.job_store.list_public(page_size, cursor)

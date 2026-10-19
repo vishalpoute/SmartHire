@@ -40,6 +40,7 @@ def create_app(
     api.state.token_verifier = token_verifier or FirebaseTokenVerifier(settings)
     api.state.profile_limiter = ProfileRateLimiter()
     api.state.public_job_limiter = ProfileRateLimiter(limit=120, max_accounts=1)
+    api.state.public_job_list_limiter = ProfileRateLimiter(limit=20, max_accounts=1)
     api.state.profile_store = profile_store or FirestoreProfileStore(settings)
     api.state.account_store = account_store or FirestoreAccountStore(settings)
     api.state.company_store = company_store or FirestoreCompanyStore(settings)
