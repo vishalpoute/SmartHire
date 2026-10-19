@@ -49,9 +49,9 @@ Current target: validated MVP by 2 November 2026. See [delivery plan](delivery-p
 
 ## Next milestones
 
-1. Register Android and verify successful live authentication, Google completion and local emulator/rules behavior.
-2. Add persistent profile onboarding with scoped data rules and server permission checks.
-3. Verify API authentication with the live Firebase project, then add permission checks and Render deployment.
+1. Verify authenticated API profile write/readback and two-account isolation, register Android and test local emulator/rules behavior. Google Web sign-in is manually confirmed.
+2. Complete profile/company client integration and server-managed recruiter review; keep public profile saving disabled until acceptance passes.
+3. Complete public job discovery and recruiter publishing UI on the deployed, permission-checked API.
 4. Seeker profiles, company profiles and server-managed recruiter approval.
 5. Firestore job repository, scoped rules, indexes and job publishing.
 6. Private resume upload, durable parsing tasks and skill confirmation.
@@ -81,3 +81,5 @@ Security follow-up: concurrent profile requests share one account budget; browse
 - Private job draft creation and owner-only reads, requiring both server recruiter approval and current owned-company approval to create. Generated IDs, server lifecycle metadata, bounded fields and authorization regression tests are implemented. Publication/discovery/UI and live authenticated acceptance remain pending.
 
 - Owned job draft replacement with strict expected versions, server version increments and Firestore update-time preconditions. Concurrent/stale edits return safe conflicts; ownership, creation metadata and non-draft states are protected. Actual authenticated editing remains unverified.
+
+- Explicit job publication with transactional owner/version/account/company rechecks, completeness validation, server timestamps and an atomic private audit event. Contract/security tests pass; public discovery, recruiter UI and authenticated live publication remain pending.

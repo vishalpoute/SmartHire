@@ -105,8 +105,8 @@ semantics, bounded calls and server timestamps; client Firestore rules remain de
 The private record links to `company_owner_uid`; this is not the public listing contract.
 A stable public company/listing representation must be defined before public browsing.
 
-Publication/closing, indexes, public discovery and
-recruiter UI remain pending. No draft is published by these endpoints. Publication must
+Closing, indexes, public discovery and
+recruiter UI remain pending. Draft create/read/edit endpoints never publish implicitly. Publication must
 recheck account/company approval atomically with the transition and validate complete
 requirements; earlier approval must not bypass later suspension or company edits.
 Live authenticated draft creation/ownership acceptance remains unverified.
@@ -128,3 +128,30 @@ simulates two writers against the installed SDK's write-precondition representat
 actual authenticated live edits remain unverified.
 
 Official write-option contract: https://docs.cloud.google.com/python/docs/reference/firestore/latest/google.cloud.firestore_v1.document.DocumentReference#google_cloud_firestore_v1_document_DocumentReference_update
+
+
+### Explicit publication
+
+`POST /api/v1/jobs/{id}/publish` accepts only a strict positive `expected_version`.
+A Firestore transaction reads the job, server account and owned company before writing;
+it rechecks active recruiter approval, current company approval, ownership, draft status
+and version in that same transaction. This prevents an earlier HTTP permission check
+from authorizing a publish after approval changes. Required skills and a description of
+at least 20 characters are mandatory; onsite/hybrid jobs need a location, and required
+and preferred skills must not overlap. Missing/foreign jobs return 404, incomplete jobs
+422, denied approval 403 and lifecycle/version conflicts 409.
+
+One transaction changes status to published, increments the version, records server
+publication/update timestamps and the reviewed company name, and creates a private
+`audit_events` record containing action, actor UID, job ID, version and server timestamp.
+No resume, description or credential is placed in the audit event. The receipt returns
+only ID/status/version; owner reads retrieve server timestamps afterward. Logical
+transaction attempts are limited to one, read calls use 10-second timeouts, and begin,
+commit and rollback use the installed SDK's default RPC policy. On an uncertain network
+outcome, reload the job before retrying. Failed authorization never queues a write.
+
+Public discovery and recruiter UI remain pending; this transition alone does not expose
+a job through a public listing endpoint. Real authenticated publication remains unverified.
+Official transaction contract: https://docs.cloud.google.com/python/docs/reference/firestore/latest/google.cloud.firestore_v1.transaction.Transaction
+
+An isolated live datastore check also exercised this store under a nested nonpersonal readiness fixture: publication committed version 2 and server timestamps with exactly one audit event; a stale repeat returned 409. Root account/company/job collections and Firebase identities were not modified. This verifies datastore behavior, not authenticated HTTP publication or public discovery.

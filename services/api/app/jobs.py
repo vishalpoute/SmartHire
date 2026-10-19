@@ -1,17 +1,19 @@
-"""Private recruiter-owned job drafts; publishing is a separate future transition."""
+"""Recruiter-owned jobs with versioned draft editing and guarded publication."""
 
 from datetime import datetime
 from threading import Lock
 from typing import Annotated, Literal
+from urllib.parse import quote
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Path, Request
-from google.api_core.exceptions import Conflict, FailedPrecondition, NotFound
+from google.api_core.exceptions import Aborted, Conflict, FailedPrecondition, NotFound
 from google.cloud import firestore
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.accounts import active_account
+from app.accounts import Account, active_account
 from app.auth import Identity
+from app.companies import CompanyInput, CompanyProfile
 from app.errors import ApiError
 from app.profiles import ProfileInput, verified_identity
 
@@ -40,10 +42,81 @@ class JobDraft(JobDraftInput):
     id: str
     recruiter_uid: str
     company_owner_uid: str
-    status: Literal["draft"]
+    status: Literal["draft", "published", "closed", "suspended"]
     version: int = Field(ge=1)
     created_at: datetime
     updated_at: datetime
+    published_at: datetime | None = None
+    company_name: str | None = None
+
+
+class JobVersionInput(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    expected_version: int = Field(ge=1, le=2147483647)
+
+
+class JobPublication(BaseModel):
+    id: str
+    status: Literal["published"] = "published"
+    version: int
+
+
+def publication_changes(uid, job_id, expected_version, job_data, account_data, company_data):
+    if not job_data or job_data.get("recruiter_uid") != uid:
+        raise ApiError(404, "job_not_found", "Job is unavailable.")
+    job = JobDraft(
+        id=job_id,
+        **{key: job_data[key] for key in JobDraft.model_fields if key != "id" and key in job_data},
+    )
+    if job.company_owner_uid != uid:
+        raise ValueError("Company owner mismatch")
+    account = Account(
+        uid=uid,
+        **{
+            key: account_data[key]
+            for key in ("role", "account_status", "recruiter_approved")
+            if key in account_data
+        },
+    )
+    if account.account_status != "active":
+        raise ApiError(403, "account_suspended", "This account is suspended.")
+    if account.role != "recruiter" or not account.recruiter_approved:
+        raise ApiError(403, "recruiter_approval_required", "Recruiter approval is required.")
+    if not company_data:
+        raise ApiError(403, "company_approval_required", "An approved company is required.")
+    company = CompanyProfile(
+        owner_uid=uid,
+        **{
+            key: company_data[key]
+            for key in (*CompanyInput.model_fields, "approval_status", "updated_at")
+            if key in company_data
+        },
+    )
+    if company.approval_status != "approved":
+        raise ApiError(403, "company_approval_required", "An approved company is required.")
+    if job.status != "draft" or job.version != expected_version:
+        raise ApiError(409, "job_version_conflict", "Job changed. Reload before publishing.")
+    overlaps = set(map(str.casefold, job.required_skills)) & set(
+        map(str.casefold, job.preferred_skills)
+    )
+    if (
+        len(job.description) < 20
+        or not job.required_skills
+        or overlaps
+        or (job.work_mode != "remote" and not job.location)
+    ):
+        raise ApiError(
+            422,
+            "job_incomplete",
+            "Complete the job description, skills and location before publishing.",
+        )
+    return {
+        "status": "published",
+        "version": job.version + 1,
+        "company_name": company.name,
+        "published_at": firestore.SERVER_TIMESTAMP,
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    }
 
 
 class FirestoreJobStore:
@@ -162,6 +235,62 @@ class FirestoreJobStore:
                 503, "jobs_unavailable", "Job drafts are temporarily unavailable."
             ) from None
 
+    def publish_owned(self, uid, job_id, expected_version):
+        try:
+            job_ref = self.collection().document(job_id)
+            owner_key = quote(uid, safe="")
+            account_ref = self.client.collection("users").document(owner_key)
+            company_ref = self.client.collection("company_profiles").document(owner_key)
+            audit_ref = self.client.collection("audit_events").document(uuid4().hex)
+
+            @firestore.transactional
+            def publish(transaction):
+                # All authorization and job reads share the transaction snapshot.
+                job = job_ref.get(transaction=transaction, timeout=10, retry=None)
+                account = account_ref.get(transaction=transaction, timeout=10, retry=None)
+                company = company_ref.get(transaction=transaction, timeout=10, retry=None)
+                changes = publication_changes(
+                    uid,
+                    job_id,
+                    expected_version,
+                    job.to_dict() if job.exists else None,
+                    account.to_dict() if account.exists else {},
+                    company.to_dict() if company.exists else None,
+                )
+                transaction.update(job_ref, changes)
+                transaction.create(
+                    audit_ref,
+                    {
+                        "action": "job.published",
+                        "actor_uid": uid,
+                        "job_id": job_id,
+                        "version": changes["version"],
+                        "created_at": firestore.SERVER_TIMESTAMP,
+                    },
+                )
+                return JobPublication(id=job_id, version=changes["version"])
+
+            # No automatic transaction re-execution: clients must reload stale versions.
+            return publish(self.client.transaction(max_attempts=1))
+        except ApiError:
+            raise
+        except (Aborted, Conflict, FailedPrecondition, NotFound):
+            raise ApiError(
+                409, "job_version_conflict", "Job changed. Reload before publishing."
+            ) from None
+        except ValueError as error:
+            if isinstance(error.__cause__, Aborted):
+                raise ApiError(
+                    409, "job_version_conflict", "Job changed. Reload before publishing."
+                ) from None
+            raise ApiError(
+                503, "jobs_unavailable", "Job publication is temporarily unavailable."
+            ) from None
+        except Exception:  # noqa: BLE001 - fail closed without record or credential details.
+            raise ApiError(
+                503, "jobs_unavailable", "Job publication is temporarily unavailable."
+            ) from None
+
 
 def approved_recruiter(request: Request, identity: Annotated[Identity, Depends(verified_identity)]):
     account = active_account(request, identity)
@@ -208,3 +337,13 @@ def update_owned_draft(
     draft: JobDraftUpdate,
 ):
     return request.app.state.job_store.update_owned(identity.uid, job_id, draft)
+
+
+@router.post("/{job_id}/publish", response_model=JobPublication)
+def publish_owned_job(
+    request: Request,
+    job_id: JobId,
+    identity: Annotated[Identity, Depends(approved_recruiter)],
+    command: JobVersionInput,
+):
+    return request.app.state.job_store.publish_owned(identity.uid, job_id, command.expected_version)
