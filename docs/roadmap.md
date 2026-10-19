@@ -83,3 +83,5 @@ Security follow-up: concurrent profile requests share one account budget; browse
 - Owned job draft replacement with strict expected versions, server version increments and Firestore update-time preconditions. Concurrent/stale edits return safe conflicts; ownership, creation metadata and non-draft states are protected. Actual authenticated editing remains unverified.
 
 - Explicit job publication with transactional owner/version/account/company rechecks, completeness validation, server timestamps and an atomic private audit event. Contract/security tests pass; public discovery, recruiter UI and authenticated live publication remain pending.
+
+- Owned published-job closure with strict expected versions, transactional ownership/account rechecks and an atomic private audit event. Active owners may withdraw vacancies after recruiter/company approval is revoked; drafts, suspended jobs and stale versions are rejected. API tests pass; recruiter UI and authenticated live closure remain pending.
