@@ -21,6 +21,8 @@ from app.jobs import router as job_router
 from app.profiles import FirestoreProfileStore
 from app.profiles import router as profile_router
 from app.rate_limit import ProfileRateLimiter
+from app.recruiter_review import FirestoreRecruiterReviewStore
+from app.recruiter_review import router as recruiter_review_router
 from app.settings import Settings
 
 logger = logging.getLogger("smarthire.api")
@@ -34,6 +36,7 @@ def create_app(
     account_store=None,
     company_store=None,
     job_store=None,
+    recruiter_review_store=None,
 ) -> FastAPI:
     settings = settings or Settings.from_environment()
     api = FastAPI(title="SmartHire API", version="0.1.0")
@@ -45,6 +48,10 @@ def create_app(
     api.state.account_store = account_store or FirestoreAccountStore(settings)
     api.state.company_store = company_store or FirestoreCompanyStore(settings)
     api.state.job_store = job_store or FirestoreJobStore(settings)
+    api.state.recruiter_review_store = recruiter_review_store or FirestoreRecruiterReviewStore(
+        settings
+    )
+    api.include_router(recruiter_review_router)
     api.include_router(job_router)
     api.include_router(public_job_router)
     api.include_router(company_router)
