@@ -3,12 +3,13 @@
 from datetime import datetime
 from threading import Lock
 from typing import Annotated, Literal
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from google.api_core.exceptions import Aborted, Conflict, FailedPrecondition, NotFound
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.accounts import Account, active_account
@@ -46,6 +47,11 @@ class RecruiterReview(BaseModel):
 class RecruiterReviewReceipt(BaseModel):
     target_uid: str
     decision: Literal["approved", "rejected"]
+
+
+class RecruiterReviewPage(BaseModel):
+    items: list[CompanyProfile]
+    next_cursor: str | None = None
 
 
 def account_from(uid, data):
@@ -93,6 +99,64 @@ class FirestoreRecruiterReviewStore:
         self.settings = settings
         self.client = None
         self.lock = Lock()
+
+    def pending(self, actor_uid, page_size, cursor=None):
+        try:
+            if not self.settings.firebase_project_id:
+                raise ValueError("Missing project")
+            with self.lock:
+                if self.client is None:
+                    self.client = firestore.Client(project=self.settings.firebase_project_id)
+            actor_ref = self.client.collection("users").document(quote(actor_uid, safe=""))
+            collection = self.client.collection("company_profiles")
+            query = collection.where(
+                filter=FieldFilter("approval_status", "==", "pending")
+            ).order_by("__name__")
+            if cursor is not None:
+                query = query.start_after({"__name__": collection.document(quote(cursor, safe=""))})
+
+            @firestore.transactional
+            def read(transaction):
+                snapshot = actor_ref.get(transaction=transaction, timeout=10, retry=None)
+                actor = account_from(actor_uid, snapshot.to_dict() if snapshot.exists else {})
+                if actor.role != "admin" or actor.account_status != "active":
+                    raise ApiError(403, "admin_required", "Administrator access is required.")
+                candidates = list(
+                    query.limit(page_size + 1).get(transaction=transaction, timeout=10, retry=None)
+                )
+                items = []
+                for document in candidates[:page_size]:
+                    owner_uid = unquote(document.id, errors="strict")
+                    if (
+                        not owner_uid
+                        or len(owner_uid) > 128
+                        or quote(owner_uid, safe="") != document.id
+                    ):
+                        raise ValueError("Invalid owner document key")
+                    data = document.to_dict()
+                    company = CompanyProfile(
+                        owner_uid=owner_uid,
+                        **{
+                            key: data[key]
+                            for key in (*CompanyInput.model_fields, "approval_status", "updated_at")
+                            if key in data
+                        },
+                    )
+                    if company.approval_status != "pending":
+                        raise ValueError("Unexpected review state")
+                    items.append(company)
+                return RecruiterReviewPage(
+                    items=items,
+                    next_cursor=items[-1].owner_uid if len(candidates) > page_size else None,
+                )
+
+            return read(self.client.transaction(max_attempts=1))
+        except ApiError:
+            raise
+        except Exception:  # noqa: BLE001 - hide company and query diagnostics.
+            raise ApiError(
+                503, "review_unavailable", "Review queue is temporarily unavailable."
+            ) from None
 
     def review(self, actor_uid, command):
         try:
@@ -180,3 +244,15 @@ def review_recruiter(
     command: RecruiterReview,
 ):
     return request.app.state.recruiter_review_store.review(identity.uid, command)
+
+
+@router.get("", response_model=RecruiterReviewPage)
+def pending_recruiters(
+    request: Request,
+    identity: Annotated[Identity, Depends(administrator)],
+    page_size: Annotated[int, Query(ge=1, le=20)] = 10,
+    cursor: Annotated[
+        str | None, Query(min_length=1, max_length=128, pattern=r"^[^\x00-\x1f\x7f]+$")
+    ] = None,
+):
+    return request.app.state.recruiter_review_store.pending(identity.uid, page_size, cursor)
