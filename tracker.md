@@ -1,0 +1,39 @@
+# SmartHire delivery tracker
+
+Baseline: 21 October 2026. Target: 2 November 2026. This file records evidence, not inferred completion; deployment entries below are last verified observations.
+
+| Milestone | Status / evidence | Remaining acceptance |
+| --- | --- | --- |
+| Flutter scaffold/theme/auth | Pushed; Google Web login manually confirmed by user on 18 October | Android setup and complete platform journeys |
+| Private profile | API/client/editor implemented and tested; hosted saving gated | Real owner save/reload and two-account isolation |
+| Company and owned job lifecycle | API implemented/tested, including approval checks and transactions | Client workflows and authenticated end-to-end proof |
+| Public discovery/detail | Frontend `0f70596` deployed; 77 Flutter tests at that milestone; actual empty API-backed state verified | Live filtering/saving and populated-job acceptance |
+| Admin recruiter review | POST deployed at API source `88853e4`; isolated transaction proof | Explicit administrator bootstrap and real admin acceptance |
+| Pending review queue | Pushed `330deb2`; 243 API tests, Ruff/Bandit clean; all three remote CI checks passed | Render deployment, authenticated queue acceptance and review UI |
+| Private resumes/parsing | Planned | Storage configuration, durable worker, upload/parser/evaluation journeys |
+| Matching/applications | Planned | Versioned evidence, snapshots, duplicate prevention and status workflows |
+| Moderation/deletion/final release | Partial foundations | UI, retention/cleanup contracts, Android/Web acceptance and security review |
+
+## Deployment baseline
+
+- Preview: https://smarthire-vishalpoute.antideploy.app — frontend source `0f70596b8d494030b4b62cb6fb2ecaa15ad2c10d`; HTTP 200/versioned bootstrap verified on 21 October.
+- API: https://smarthire-api-ep83.onrender.com — last verified source `88853e484449f3361abd82415949cddc8875302e`.
+- Queue source `330deb2f5d5590e97d58453230da72fd4672180d` is pushed but not verified deployed: Render browser navigation repeatedly timed out. Preserve the pushed work and retry hosting independently.
+- Known preview scanner result: one low missing-security-headers finding; do not describe the release as finding-free.
+
+## Priority and blockers
+
+Next: deploy the queue, then complete authenticated profile/isolation acceptance and company/recruiter UI. Independent implementation can continue while browser-only acceptance is blocked; do not enable gated saving prematurely.
+
+Required decisions/dependencies: explicit approval before real admin role assignment; private Storage billing/configuration and durable worker hosting; real authenticated acceptance access. Google popup limitations in the automated browser are not evidence of login failure or persistence success.
+
+Deadline risk: core resume/application/matching and cross-platform acceptance remain open. Reassess against acceptance outcomes each milestone; report slippage without removing scope silently.
+
+## Current implementation progress
+
+- Company onboarding client payload now has normalized editable fields and bounds matching the API, including HTTPS/no-credentials website validation. Three focused contract tests pass. Repository, session-safe HTTP integration and editor UI remain next; no hosted company saving is enabled by this change.
+- The eight root specifications now guide implementation alongside the detailed existing contracts.
+
+## Update format
+
+For each completed milestone record source commit, pushed status, checks actually run, deployment source/status and remaining acceptance. Keep operational secrets and detailed private records outside Git. Do not add routine heartbeat entries or duplicate unchanged results.
