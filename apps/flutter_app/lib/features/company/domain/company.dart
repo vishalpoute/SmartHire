@@ -1,3 +1,61 @@
+enum CompanyApproval { pending, approved, rejected }
+
+/// A server receipt, never used as an editable write body.
+class SavedCompany {
+  const SavedCompany({
+    required this.ownerUid,
+    required this.approval,
+    required this.updatedAt,
+    required this.draft,
+  });
+
+  final String ownerUid;
+  final CompanyApproval approval;
+  final DateTime updatedAt;
+  final CompanyDraft draft;
+
+  factory SavedCompany.fromJson(
+    Map<String, Object?> json, {
+    required String expectedOwnerUid,
+  }) {
+    String field(String key) {
+      final value = json[key];
+      if (value is! String) {
+        throw const FormatException('Invalid company response');
+      }
+      return value;
+    }
+
+    final owner = field('owner_uid');
+    final timestamp = field('updated_at');
+    final date = DateTime.tryParse(timestamp);
+    final status = field('approval_status');
+    final approvals = CompanyApproval.values.where(
+      (item) => item.name == status,
+    );
+    final draft = CompanyDraft(
+      name: field('name'),
+      description: field('description'),
+      location: field('location'),
+      website: field('website'),
+    );
+    if (owner.isEmpty ||
+        owner != expectedOwnerUid ||
+        date == null ||
+        !RegExp(r'(Z|[+-]\d{2}:\d{2})$').hasMatch(timestamp) ||
+        approvals.length != 1 ||
+        draft.validate().isNotEmpty) {
+      throw const FormatException('Invalid company response');
+    }
+    return SavedCompany(
+      ownerUid: owner,
+      approval: approvals.single,
+      updatedAt: date.toUtc(),
+      draft: draft,
+    );
+  }
+}
+
 /// Editable company data. Identity and approval never belong in write bodies.
 class CompanyDraft {
   const CompanyDraft({

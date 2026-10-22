@@ -49,6 +49,8 @@ Current target: validated MVP by 2 November 2026. See [delivery plan](delivery-p
 
 ## Next milestones
 
+Company onboarding client now has API-aligned editable payloads, owner-bound response parsing and an authenticated HTTP repository with session-change rejection and safe errors. All 90 Flutter tests and full analysis passed on 22 October. Company editor/state integration and real authenticated acceptance remain pending; no hosted saving was enabled.
+
 1. Verify authenticated API profile write/readback and two-account isolation, register Android and test local emulator/rules behavior. Google Web sign-in is manually confirmed.
 2. Complete profile/company client integration and server-managed recruiter review; keep public profile saving disabled until acceptance passes.
 3. Complete public job discovery and recruiter publishing UI on the deployed, permission-checked API.

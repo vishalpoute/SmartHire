@@ -16,6 +16,9 @@
 
 ## Efficient implementation
 
+- Use the local graphify index for architecture/file-relationship discovery before broad source reads. Query with a small context budget, then verify only relevant source lines. The eight root Markdown specifications remain authoritative for requirements and progress; the graph is a derived navigation aid, not proof of acceptance.
+- Refresh only changed files after meaningful milestones. Keep generated `graphify-out/` local and ignored; exclude binary assets, lockfiles, build output and secrets. Reuse cached document extraction instead of spawning extraction agents on every session. Record graph freshness/coverage and unknown token costs honestly.
+
 - Use targeted searches and precise patches; no whole-file rewrites for small edits. Do not load lockfiles, binary assets, build output or full logs into model context.
 - Batch independent reads and related checks. Show at most ten relevant failure lines; keep progress/final reports concise.
 - Avoid redundant polling, repeated passed suites and unnecessary agent delegation. Use the configured default model; no pinned override. Usage limits cannot be bypassed or guaranteed never to exhaust.
