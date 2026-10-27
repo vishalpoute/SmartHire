@@ -31,7 +31,7 @@ Deadline risk: core resume/application/matching and cross-platform acceptance re
 
 ## Current implementation progress
 
-- Company onboarding client payload was pushed in `21d0495`. The next implementation adds owner-bound server receipts and an authenticated company API adapter: fixed ownerless route, verified sessions, account-change rejection, safe errors and pending-only save receipts. All 90 Flutter tests and full analysis passed on 22 October. Editor/state integration and authenticated live acceptance remain next; hosted company saving is not enabled.
+- Company onboarding now includes the owner-bound API adapter, verified-session route, editable company form, validation, retry, pending-review receipts, unsaved-change protection and session reset. On 27 October, all 95 Flutter tests passed (including 18 focused company checks), full Flutter analysis was clean and diff whitespace checks passed. Live owner write/readback and two-account isolation remain unverified; hosted saving remains gated. This milestone has not been deployed.
 - The eight root specifications now guide implementation alongside the detailed existing contracts.
 - Local graphify memory index built on 22 October with 1,150 nodes and 2,216 edges; all 26 documents were covered and extraction cached. Binary assets excluded. Derived navigation has 129 dangling references and 285 collapsed same-endpoint edges; verify source. Benchmark estimates 31.6x less query context, not measured account usage. Generated outputs stay ignored. Tracker changes after indexing require incremental refresh.
 

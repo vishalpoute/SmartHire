@@ -13,6 +13,9 @@ import 'features/profile/presentation/profile_page.dart';
 import 'features/profile/presentation/profile_edit_page.dart';
 import 'features/profile/domain/profile_repository.dart';
 import 'features/profile/data/firebase_profile_session.dart';
+import 'features/company/presentation/company_page.dart';
+import 'features/company/domain/company_repository.dart';
+import 'features/company/data/api_company_repository.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/data/api_public_jobs_repository.dart';
 import 'features/jobs/domain/public_jobs_repository.dart';
@@ -28,6 +31,7 @@ class SmartHireApp extends StatelessWidget {
     this.authRepository,
     this.initialRoute,
     this.profileRepositoryFactory,
+    this.companyRepositoryFactory,
     this.publicJobsRepository,
   });
   final PublicJobsRepository? publicJobsRepository;
@@ -35,6 +39,34 @@ class SmartHireApp extends StatelessWidget {
   final AuthRepository? authRepository;
   final String? initialRoute;
   final ProfileRepository Function(String uid)? profileRepositoryFactory;
+  final CompanyRepository Function(String uid)? companyRepositoryFactory;
+
+  CompanyRepository Function(String)? get _companies {
+    if (companyRepositoryFactory != null) return companyRepositoryFactory;
+    const origin = String.fromEnvironment('COMPANY_API_ORIGIN');
+    final uri = Uri.tryParse(origin);
+    if (firebaseAvailability != FirebaseAvailability.ready ||
+        uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        (uri.path.isNotEmpty && uri.path != '/')) {
+      return null;
+    }
+    return (uid) {
+      final session = FirebaseProfileSession(
+        FirebaseAuth.instance,
+        ownerUid: uid,
+      );
+      return ApiCompanyRepository(
+        origin: uri,
+        session: session.read,
+        currentUid: () => session.currentUid,
+      );
+    };
+  }
 
   ProfileRepository Function(String)? get _profiles {
     if (profileRepositoryFactory != null) return profileRepositoryFactory;
@@ -132,6 +164,8 @@ class SmartHireApp extends StatelessWidget {
             },
             routes: {
               AppRoutes.profile: (_) => const ProfilePage(),
+              AppRoutes.company: (_) =>
+                  CompanyPage(repositoryFactory: _companies),
               AppRoutes.profileEdit: (_) =>
                   ProfileEditPage(repositoryFactory: _profiles),
               AppRoutes.discover: (context) {

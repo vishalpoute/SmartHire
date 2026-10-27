@@ -93,6 +93,11 @@ class AccountSummary extends StatelessWidget {
                           Navigator.pushNamed(context, AppRoutes.profile),
                       child: const Text('View profile'),
                     ),
+                    OutlinedButton(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.company),
+                      child: const Text('Company profile'),
+                    ),
                     TextButton(
                       onPressed: state.status == AuthActionStatus.submitting
                           ? null
