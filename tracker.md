@@ -8,7 +8,7 @@ Baseline: 21 October 2026. Target: 2 November 2026. This file records evidence, 
 | Private profile | API/client/editor implemented and tested; hosted saving gated | Real owner save/reload and two-account isolation |
 | Company and owned job lifecycle | API implemented/tested, including approval checks and transactions | Client workflows and authenticated end-to-end proof |
 | Public discovery/detail | Frontend `0f70596` deployed; 77 Flutter tests at that milestone; actual empty API-backed state verified | Live filtering/saving and populated-job acceptance |
-| Admin recruiter review | POST deployed at API source `88853e4`; isolated transaction proof | Explicit administrator bootstrap and real admin acceptance |
+| Admin recruiter review | POST deployed at API source `88853e4`; isolated transaction proof; Flutter queue/decision screen locally tested | Explicit administrator bootstrap, UI deployment and real admin acceptance |
 | Pending review queue | Pushed `330deb2`; 243 API tests, Ruff/Bandit clean; all three remote CI checks passed | Render deployment, authenticated queue acceptance and review UI |
 | Private resumes/parsing | Planned | Storage configuration, durable worker, upload/parser/evaluation journeys |
 | Matching/applications | Planned | Versioned evidence, snapshots, duplicate prevention and status workflows |
@@ -33,6 +33,7 @@ Deadline risk: core resume/application/matching and cross-platform acceptance re
 
 - Company onboarding now includes the owner-bound API adapter, verified-session route, editable company form, validation, retry, pending-review receipts, unsaved-change protection and session reset. On 27 October, all 95 Flutter tests passed (including 18 focused company checks), full Flutter analysis was clean and diff whitespace checks passed. Live owner write/readback and two-account isolation remain unverified; hosted saving remains gated. This milestone has not been deployed.
 - The eight root specifications now guide implementation alongside the detailed existing contracts.
+- Administrator recruiter review now has a verified-session queue and reasoned approval/rejection screen, bounded pagination, stale-write reloads and private-state cleanup on session changes. On 27 October, 15 new focused tests and all 110 Flutter tests passed; analysis was clean. No administrator bootstrap, real approval or UI deployment is claimed. See `docs/recruiter-review.md`.
 - Local graphify memory index built on 22 October with 1,150 nodes and 2,216 edges; all 26 documents were covered and extraction cached. Binary assets excluded. Derived navigation has 129 dangling references and 285 collapsed same-endpoint edges; verify source. Benchmark estimates 31.6x less query context, not measured account usage. Generated outputs stay ignored. Tracker changes after indexing require incremental refresh.
 
 ## Update format

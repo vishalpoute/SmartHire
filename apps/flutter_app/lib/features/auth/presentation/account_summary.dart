@@ -98,6 +98,13 @@ class AccountSummary extends StatelessWidget {
                           Navigator.pushNamed(context, AppRoutes.company),
                       child: const Text('Company profile'),
                     ),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.recruiterReviews,
+                      ),
+                      child: const Text('Recruiter reviews (admin)'),
+                    ),
                     TextButton(
                       onPressed: state.status == AuthActionStatus.submitting
                           ? null

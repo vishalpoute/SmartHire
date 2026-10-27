@@ -16,6 +16,9 @@ import 'features/profile/data/firebase_profile_session.dart';
 import 'features/company/presentation/company_page.dart';
 import 'features/company/domain/company_repository.dart';
 import 'features/company/data/api_company_repository.dart';
+import 'features/recruiter_review/domain/recruiter_review.dart';
+import 'features/recruiter_review/data/api_recruiter_review_repository.dart';
+import 'features/recruiter_review/presentation/recruiter_review_page.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/data/api_public_jobs_repository.dart';
 import 'features/jobs/domain/public_jobs_repository.dart';
@@ -32,6 +35,7 @@ class SmartHireApp extends StatelessWidget {
     this.initialRoute,
     this.profileRepositoryFactory,
     this.companyRepositoryFactory,
+    this.reviewRepositoryFactory,
     this.publicJobsRepository,
   });
   final PublicJobsRepository? publicJobsRepository;
@@ -40,6 +44,33 @@ class SmartHireApp extends StatelessWidget {
   final String? initialRoute;
   final ProfileRepository Function(String uid)? profileRepositoryFactory;
   final CompanyRepository Function(String uid)? companyRepositoryFactory;
+  final RecruiterReviewRepository Function(String uid)? reviewRepositoryFactory;
+
+  RecruiterReviewRepository Function(String)? get _reviews {
+    if (reviewRepositoryFactory != null) return reviewRepositoryFactory;
+    const origin = String.fromEnvironment('REVIEW_API_ORIGIN');
+    final uri = Uri.tryParse(origin);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        (uri.path.isNotEmpty && uri.path != '/')) {
+      return null;
+    }
+    return (uid) {
+      final session = FirebaseProfileSession(
+        FirebaseAuth.instance,
+        ownerUid: uid,
+      );
+      return ApiRecruiterReviewRepository(
+        origin: uri,
+        session: session.read,
+        currentUid: () => session.currentUid,
+      );
+    };
+  }
 
   CompanyRepository Function(String)? get _companies {
     if (companyRepositoryFactory != null) return companyRepositoryFactory;
@@ -166,6 +197,8 @@ class SmartHireApp extends StatelessWidget {
               AppRoutes.profile: (_) => const ProfilePage(),
               AppRoutes.company: (_) =>
                   CompanyPage(repositoryFactory: _companies),
+              AppRoutes.recruiterReviews: (_) =>
+                  RecruiterReviewPage(repositoryFactory: _reviews),
               AppRoutes.profileEdit: (_) =>
                   ProfileEditPage(repositoryFactory: _profiles),
               AppRoutes.discover: (context) {
