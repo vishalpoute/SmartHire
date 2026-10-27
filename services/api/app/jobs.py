@@ -69,6 +69,11 @@ class JobVersionInput(BaseModel):
     expected_version: int = Field(ge=1, le=2147483647)
 
 
+class OwnedJobPage(BaseModel):
+    items: list[JobDraft]
+    next_cursor: str | None = None
+
+
 class JobClosure(BaseModel):
     id: str
     status: Literal["closed"] = "closed"
@@ -313,6 +318,65 @@ class FirestoreJobStore:
                 503, "jobs_unavailable", "Job drafts are temporarily unavailable."
             ) from None
 
+    def list_owned(self, uid, page_size=10, cursor=None):
+        try:
+            if not 1 <= page_size <= 20:
+                raise ValueError("Invalid page size")
+            if cursor is not None and (
+                len(cursor) != 32 or any(char not in "0123456789abcdef" for char in cursor)
+            ):
+                raise ValueError("Invalid cursor")
+            collection = self.collection()
+            account_ref = self.client.collection("users").document(quote(uid, safe=""))
+            query = collection.where(filter=FieldFilter("recruiter_uid", "==", uid)).order_by(
+                "__name__"
+            )
+            if cursor is not None:
+                query = query.start_after({"__name__": collection.document(cursor)})
+
+            @firestore.transactional
+            def read(transaction):
+                account = account_ref.get(transaction=transaction, timeout=10, retry=None)
+                if (
+                    not account.exists
+                    or account.to_dict().get("account_status", "active") != "active"
+                ):
+                    raise ApiError(403, "account_inactive", "An active account is required.")
+                candidates = list(
+                    query.limit(page_size + 1).get(transaction=transaction, timeout=10, retry=None)
+                )
+                items = []
+                for document in candidates[:page_size]:
+                    if len(document.id) != 32 or any(
+                        char not in "0123456789abcdef" for char in document.id
+                    ):
+                        raise ValueError("Invalid stored job ID")
+                    data = document.to_dict()
+                    if data.get("recruiter_uid") != uid or data.get("company_owner_uid") != uid:
+                        raise ValueError("Job ownership mismatch")
+                    items.append(
+                        JobDraft(
+                            id=document.id,
+                            **{
+                                key: data[key]
+                                for key in JobDraft.model_fields
+                                if key != "id" and key in data
+                            },
+                        )
+                    )
+                return OwnedJobPage(
+                    items=items,
+                    next_cursor=items[-1].id if len(candidates) > page_size else None,
+                )
+
+            return read(self.client.transaction(max_attempts=1))
+        except ApiError:
+            raise
+        except Exception:  # noqa: BLE001 - hide private job and datastore diagnostics.
+            raise ApiError(
+                503, "jobs_unavailable", "Your jobs are temporarily unavailable."
+            ) from None
+
     def get_owned(self, uid, job_id):
         try:
             snapshot = self.collection().document(job_id).get(timeout=10, retry=None)
@@ -468,6 +532,16 @@ def approved_recruiter(request: Request, identity: Annotated[Identity, Depends(v
 
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 JobId = Annotated[str, Path(pattern=r"^[a-f0-9]{32}$")]
+
+
+@router.get("", response_model=OwnedJobPage)
+def list_owned_jobs(
+    request: Request,
+    identity: Annotated[Identity, Depends(verified_identity)],
+    page_size: Annotated[int, Query(ge=1, le=20)] = 10,
+    cursor: Annotated[str | None, Query(pattern=r"^[a-f0-9]{32}$", max_length=32)] = None,
+):
+    return request.app.state.job_store.list_owned(identity.uid, page_size, cursor)
 
 
 @router.post("", response_model=JobDraft, status_code=201)

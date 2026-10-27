@@ -105,8 +105,9 @@ semantics, bounded calls and server timestamps; client Firestore rules remain de
 The private record links to `company_owner_uid`; this is not the public listing contract.
 A stable public company/listing representation must be defined before public browsing.
 
-Closing, indexes, public discovery and
-recruiter UI remain pending. Draft create/read/edit endpoints never publish implicitly. Publication must
+Closure and public discovery APIs are implemented separately below. A Flutter recruiter workspace
+now supports drafts, owned listing, publication and closure; deployment and authenticated acceptance
+remain pending. See `../../docs/recruiter-jobs.md`. Draft create/read/edit endpoints never publish implicitly. Publication must
 recheck account/company approval atomically with the transition and validate complete
 requirements; earlier approval must not bypass later suspension or company edits.
 Live authenticated draft creation/ownership acceptance remains unverified.
@@ -150,8 +151,8 @@ transaction attempts are limited to one, read calls use 10-second timeouts, and 
 commit and rollback use the installed SDK's default RPC policy. On an uncertain network
 outcome, reload the job before retrying. Failed authorization never queues a write.
 
-Public discovery and recruiter UI remain pending; this transition alone does not expose
-a job through a public listing endpoint. Real authenticated publication remains unverified.
+Public discovery is implemented by the separate public listing endpoints, and the Flutter recruiter
+workspace uses this explicit transition. Real authenticated publication remains unverified.
 Official transaction contract: https://docs.cloud.google.com/python/docs/reference/firestore/latest/google.cloud.firestore_v1.transaction.Transaction
 
 An isolated live datastore check also exercised this store under a nested nonpersonal readiness fixture: publication committed version 2 and server timestamps with exactly one audit event; a stale repeat returned 409. Root account/company/job collections and Firebase identities were not modified. This verifies datastore behavior, not authenticated HTTP publication or public discovery.

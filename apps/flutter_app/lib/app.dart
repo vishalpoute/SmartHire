@@ -19,6 +19,9 @@ import 'features/company/data/api_company_repository.dart';
 import 'features/recruiter_review/domain/recruiter_review.dart';
 import 'features/recruiter_review/data/api_recruiter_review_repository.dart';
 import 'features/recruiter_review/presentation/recruiter_review_page.dart';
+import 'features/recruiter_jobs/domain/recruiter_job.dart';
+import 'features/recruiter_jobs/data/api_recruiter_jobs_repository.dart';
+import 'features/recruiter_jobs/presentation/recruiter_jobs_page.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/data/api_public_jobs_repository.dart';
 import 'features/jobs/domain/public_jobs_repository.dart';
@@ -36,6 +39,7 @@ class SmartHireApp extends StatelessWidget {
     this.profileRepositoryFactory,
     this.companyRepositoryFactory,
     this.reviewRepositoryFactory,
+    this.recruiterJobsRepositoryFactory,
     this.publicJobsRepository,
   });
   final PublicJobsRepository? publicJobsRepository;
@@ -45,6 +49,36 @@ class SmartHireApp extends StatelessWidget {
   final ProfileRepository Function(String uid)? profileRepositoryFactory;
   final CompanyRepository Function(String uid)? companyRepositoryFactory;
   final RecruiterReviewRepository Function(String uid)? reviewRepositoryFactory;
+  final RecruiterJobsRepository Function(String uid)?
+  recruiterJobsRepositoryFactory;
+
+  RecruiterJobsRepository Function(String)? get _recruiterJobs {
+    if (recruiterJobsRepositoryFactory != null) {
+      return recruiterJobsRepositoryFactory;
+    }
+    const origin = String.fromEnvironment('RECRUITER_JOBS_API_ORIGIN');
+    final uri = Uri.tryParse(origin);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        (uri.path.isNotEmpty && uri.path != '/')) {
+      return null;
+    }
+    return (uid) {
+      final session = FirebaseProfileSession(
+        FirebaseAuth.instance,
+        ownerUid: uid,
+      );
+      return ApiRecruiterJobsRepository(
+        origin: uri,
+        session: session.read,
+        currentUid: () => session.currentUid,
+      );
+    };
+  }
 
   RecruiterReviewRepository Function(String)? get _reviews {
     if (reviewRepositoryFactory != null) return reviewRepositoryFactory;
@@ -199,6 +233,8 @@ class SmartHireApp extends StatelessWidget {
                   CompanyPage(repositoryFactory: _companies),
               AppRoutes.recruiterReviews: (_) =>
                   RecruiterReviewPage(repositoryFactory: _reviews),
+              AppRoutes.recruiterJobs: (_) =>
+                  RecruiterJobsPage(repositoryFactory: _recruiterJobs),
               AppRoutes.profileEdit: (_) =>
                   ProfileEditPage(repositoryFactory: _profiles),
               AppRoutes.discover: (context) {

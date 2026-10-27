@@ -99,6 +99,11 @@ class AccountSummary extends StatelessWidget {
                       child: const Text('Company profile'),
                     ),
                     OutlinedButton(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.recruiterJobs),
+                      child: const Text('Manage jobs'),
+                    ),
+                    OutlinedButton(
                       onPressed: () => Navigator.pushNamed(
                         context,
                         AppRoutes.recruiterReviews,
