@@ -10,13 +10,13 @@ Baseline: 21 October 2026. Target: 2 November 2026. This file records evidence, 
 | Public discovery/detail | Frontend `0f70596` deployed; 77 Flutter tests at that milestone; actual empty API-backed state verified | Live filtering/saving and populated-job acceptance |
 | Admin recruiter review | POST deployed at API source `88853e4`; isolated transaction proof; Flutter queue/decision screen locally tested | Explicit administrator bootstrap, UI deployment and real admin acceptance |
 | Pending review queue | Pushed `330deb2`; 243 API tests, Ruff/Bandit clean; all three remote CI checks passed | Render deployment, authenticated queue acceptance and review UI |
-| Private resumes/parsing | Planned | Storage configuration, durable worker, upload/parser/evaluation journeys |
+| Private resumes/parsing | Free private bucket and bounded offline parser/storage adapters verified with nonpersonal fixtures; 282 API tests pass | Owner API/UI, durable worker integration, authenticated isolation and consented parser evaluation |
 | Matching/applications | Planned | Versioned evidence, snapshots, duplicate prevention and status workflows |
 | Moderation/deletion/final release | Partial foundations | UI, retention/cleanup contracts, Android/Web acceptance and security review |
 
 ## Deployment baseline
 
-- Preview: https://smarthire-vishalpoute.antideploy.app — frontend source `0f70596b8d494030b4b62cb6fb2ecaa15ad2c10d`; HTTP 200/versioned bootstrap verified on 21 October.
+- Preview: https://smarthire-vishalpoute.antideploy.app — frontend source `d6592f6dc359e8a45154152206b13d41987bab42`; actual index, versioned bootstrap and main JavaScript SHA-256 hashes matched on 28 October. Authenticated feature origins remain absent pending real acceptance.
 - API: https://smarthire-api-ep83.onrender.com — last verified source `88853e484449f3361abd82415949cddc8875302e`.
 - Queue source `330deb2f5d5590e97d58453230da72fd4672180d` is pushed but not verified deployed: Render browser navigation repeatedly timed out. Preserve the pushed work and retry hosting independently.
 - Known preview scanner result: one low missing-security-headers finding; do not describe the release as finding-free.
