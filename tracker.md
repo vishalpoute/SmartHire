@@ -7,7 +7,7 @@ Baseline: 21 October 2026. Target: 2 November 2026. This file records evidence, 
 | Flutter scaffold/theme/auth | Pushed; Google Web login manually confirmed by user on 18 October | Android setup and complete platform journeys |
 | Private profile | API/client/editor implemented and tested; hosted saving gated | Real owner save/reload and two-account isolation |
 | Company and owned job lifecycle | API implemented/tested, including approval checks and transactions | Client workflows and authenticated end-to-end proof |
-| Public discovery/detail | Frontend `0f70596` deployed; 77 Flutter tests at that milestone; actual empty API-backed state verified | Live filtering/saving and populated-job acceptance |
+| Public discovery/detail | Live bounded search/mode/employment filters and owner-persisted saved roles implemented; 344 API/171 Flutter tests and isolated Firestore bookmark checks pass | Deploy latest client/API and populated real-account acceptance |
 | Admin recruiter review | POST deployed at API source `88853e4`; isolated transaction proof; Flutter queue/decision screen locally tested | Explicit administrator bootstrap, UI deployment and real admin acceptance |
 | Pending review queue | Pushed `330deb2`; 243 API tests, Ruff/Bandit clean; all three remote CI checks passed | Render deployment, authenticated queue acceptance and review UI |
 | Private resumes/parsing | Owner API, durable leases, explicit skill confirmation/deletion and Flutter screen implemented; 305 API tests plus two lease regressions and 150 Flutter tests pass; real storage/Firestore fixture verified | Render secret import and deployed worker, authenticated isolation and consented parser evaluation |
@@ -29,6 +29,8 @@ Required decisions/dependencies: explicit named administrator approval and real 
 Deadline risk: core resume/application/matching and cross-platform acceptance remain open. Reassess against acceptance outcomes each milestone; report slippage without removing scope silently.
 
 ## Current implementation progress
+
+- Discovery now submits search/work-mode/employment filters to the real API with bounded sparse-page continuation and stale-query fencing. Saved roles persist under server-selected ownership with idempotent save/remove, an atomic 100-role limit and safe unavailable-job placeholders. Real Firestore bookmark isolation/removal passed with cleanup. See `docs/discovery-saved-jobs.md`.
 
 - Matching/application workflows now pin job/resume/skill/parser/algorithm versions, show exact evidence/missing skills, distinguish unscored from zero coverage and require explicit submission/decisions. Duplicate application and status/audit writes are atomic. Revoked recruiter approval removes candidate access. Private originals are never shared. Isolated real Firestore ownership/query/snapshot/stale-write/revocation checks passed and fixtures were cleaned. See `docs/matching-applications.md`; hosted and authenticated acceptance remain pending.
 

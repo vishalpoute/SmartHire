@@ -28,6 +28,9 @@ import 'features/resumes/presentation/resumes_page.dart';
 import 'features/applications/domain/application.dart';
 import 'features/applications/data/api_applications_repository.dart';
 import 'features/applications/presentation/applications_page.dart';
+import 'features/saved_jobs/domain/saved_job.dart';
+import 'features/saved_jobs/data/api_saved_jobs_repository.dart';
+import 'features/saved_jobs/presentation/saved_jobs_page.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/data/api_public_jobs_repository.dart';
 import 'features/jobs/domain/public_jobs_repository.dart';
@@ -49,6 +52,7 @@ class SmartHireApp extends StatelessWidget {
     this.resumeRepositoryFactory,
     this.resumePicker,
     this.applicationsRepositoryFactory,
+    this.savedJobsRepositoryFactory,
     this.publicJobsRepository,
   });
   final PublicJobsRepository? publicJobsRepository;
@@ -64,6 +68,34 @@ class SmartHireApp extends StatelessWidget {
   final Future<PickedResume?> Function()? resumePicker;
   final ApplicationsRepository Function(String uid)?
   applicationsRepositoryFactory;
+  final SavedJobsRepository Function(String uid)? savedJobsRepositoryFactory;
+
+  SavedJobsRepository Function(String)? get _savedJobs {
+    if (savedJobsRepositoryFactory != null) return savedJobsRepositoryFactory;
+    const value = String.fromEnvironment('SAVED_JOBS_API_ORIGIN');
+    final origin = Uri.tryParse(value);
+    if (origin == null ||
+        origin.scheme != 'https' ||
+        origin.host.isEmpty ||
+        origin.userInfo.isNotEmpty ||
+        origin.hasQuery ||
+        origin.hasFragment ||
+        (origin.path.isNotEmpty && origin.path != '/')) {
+      return null;
+    }
+    return (uid) {
+      final session = FirebaseProfileSession(
+        FirebaseAuth.instance,
+        ownerUid: uid,
+      );
+      return ApiSavedJobsRepository(
+        origin: origin,
+        ownerUid: uid,
+        session: session.read,
+        currentUid: () => session.currentUid,
+      );
+    };
+  }
 
   ApplicationsRepository Function(String)? get _applications {
     if (applicationsRepositoryFactory != null) {
@@ -299,6 +331,12 @@ class SmartHireApp extends StatelessWidget {
                   final id = parts.length == 2 && parts.first == 'jobs'
                       ? parts.last
                       : '';
+                  if (parts.length == 2 && parts.first == 'save') {
+                    return SavedJobsPage(
+                      repositoryFactory: _savedJobs,
+                      jobId: parts.last,
+                    );
+                  }
                   final repository = context.read<PublicJobsRepository?>();
                   return repository == null
                       ? JobDetailsPage(jobId: id)
@@ -306,6 +344,7 @@ class SmartHireApp extends StatelessWidget {
                           repository: repository,
                           jobId: id,
                           applicationsAvailable: _applications != null,
+                          savingAvailable: _savedJobs != null,
                         );
                 },
               );
@@ -324,6 +363,8 @@ class SmartHireApp extends StatelessWidget {
               ),
               AppRoutes.applications: (_) =>
                   ApplicationsPage(repositoryFactory: _applications),
+              AppRoutes.savedJobs: (_) =>
+                  SavedJobsPage(repositoryFactory: _savedJobs),
               AppRoutes.recruiterApplications: (_) => ApplicationsPage(
                 repositoryFactory: _applications,
                 recruiter: true,

@@ -33,7 +33,25 @@ class ApiPublicJobsRepository implements PublicJobsRepository {
   static final _id = RegExp(r'^[a-f0-9]{32}$');
 
   @override
-  Future<PublicJobsPage> page({int pageSize = 10, String? cursor}) async {
+  Future<PublicJobsPage> page({
+    int pageSize = 10,
+    String? cursor,
+    String search = '',
+    String? workMode,
+    String? employmentType,
+  }) async {
+    if (search.length > 80 ||
+        (workMode != null &&
+            !{'remote', 'hybrid', 'onsite'}.contains(workMode)) ||
+        (employmentType != null &&
+            !{
+              'full_time',
+              'part_time',
+              'contract',
+              'internship',
+            }.contains(employmentType))) {
+      throw ArgumentError('Invalid job filters.');
+    }
     if (pageSize < 1 ||
         pageSize > 10 ||
         (cursor != null && !_id.hasMatch(cursor))) {
@@ -41,7 +59,13 @@ class ApiPublicJobsRepository implements PublicJobsRepository {
     }
     final data = await _get(
       '/api/v1/public/jobs',
-      query: {'page_size': pageSize, 'cursor': ?cursor},
+      query: {
+        'page_size': pageSize,
+        'cursor': ?cursor,
+        if (search.trim().isNotEmpty) 'search': search.trim(),
+        'work_mode': ?workMode,
+        'employment_type': ?employmentType,
+      },
     );
     try {
       final body = _map(data);

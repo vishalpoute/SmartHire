@@ -32,6 +32,8 @@ from app.resume_storage import ResumeStorageFailure, S3ResumeStorage
 from app.resume_store import FirestoreResumeStore
 from app.resume_worker import ResumeWorker
 from app.resumes import router as resume_router
+from app.saved_jobs import FirestoreSavedJobStore
+from app.saved_jobs import router as saved_job_router
 from app.settings import Settings
 
 logger = logging.getLogger("smarthire.api")
@@ -51,6 +53,7 @@ def create_app(
     resume_worker=None,
     match_store=None,
     application_store=None,
+    saved_job_store=None,
 ) -> FastAPI:
     settings = settings or Settings.from_environment()
 
@@ -77,6 +80,7 @@ def create_app(
     api.state.resume_store = resume_store or FirestoreResumeStore(settings)
     api.state.match_store = match_store or FirestoreMatchStore(settings)
     api.state.application_store = application_store or FirestoreApplicationStore(settings)
+    api.state.saved_job_store = saved_job_store or FirestoreSavedJobStore(settings)
     api.state.resume_storage = resume_storage
     if resume_storage is None and settings.resume_uploads_enabled:
         try:
@@ -97,6 +101,7 @@ def create_app(
     api.include_router(resume_router)
     api.include_router(match_router)
     api.include_router(application_router)
+    api.include_router(saved_job_router)
     api.include_router(job_router)
     api.include_router(public_job_router)
     api.include_router(company_router)

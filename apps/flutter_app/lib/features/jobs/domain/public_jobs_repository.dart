@@ -42,6 +42,12 @@ class PublicJobsFailure implements Exception {
 }
 
 abstract interface class PublicJobsRepository {
-  Future<PublicJobsPage> page({int pageSize = 10, String? cursor});
+  Future<PublicJobsPage> page({
+    int pageSize = 10,
+    String? cursor,
+    String search = '',
+    String? workMode,
+    String? employmentType,
+  });
   Future<PublishedJob?> detail(String id);
 }

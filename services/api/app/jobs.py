@@ -48,6 +48,23 @@ class PublicJobPage(BaseModel):
     next_cursor: str | None = None
 
 
+class PublicJobFilters(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid", str_strip_whitespace=True)
+    search: str = Field(default="", max_length=80)
+    work_mode: Literal["remote", "hybrid", "onsite"] | None = None
+    employment_type: Literal["full_time", "part_time", "contract", "internship"] | None = None
+
+    def accepts(self, job):
+        if self.work_mode is not None and job.work_mode != self.work_mode:
+            return False
+        if self.employment_type is not None and job.employment_type != self.employment_type:
+            return False
+        text = " ".join(
+            (job.title, job.company_name, job.location, *job.required_skills, *job.preferred_skills)
+        ).casefold()
+        return all(word in text for word in self.search.casefold().split())
+
+
 class JobDraftUpdate(JobDraftInput):
     expected_version: int = Field(ge=1, le=2147483647)
 
@@ -259,7 +276,7 @@ class FirestoreJobStore:
         except Exception:  # noqa: BLE001 - no private record details in public failures.
             raise ApiError(503, "jobs_unavailable", "Jobs are temporarily unavailable.") from None
 
-    def list_public(self, page_size, cursor=None):
+    def list_public(self, page_size, cursor=None, filters=None):
         try:
             collection = self.collection()
             query = collection.where(filter=FieldFilter("status", "==", "published")).order_by(
@@ -275,7 +292,7 @@ class FirestoreJobStore:
             items = []
             for candidate in scanned:
                 job = self.get_public(candidate.id)
-                if job is not None:
+                if job is not None and (filters is None or filters.accepts(job)):
                     items.append(job)
             return PublicJobPage(
                 items=items,
@@ -620,6 +637,9 @@ def list_public_jobs(
     request: Request,
     page_size: Annotated[int, Query(ge=1, le=10)] = 10,
     cursor: Annotated[str | None, Query(pattern=r"^[a-f0-9]{32}$")] = None,
+    search: Annotated[str, Query(max_length=80)] = "",
+    work_mode: Literal["remote", "hybrid", "onsite"] | None = None,
+    employment_type: Literal["full_time", "part_time", "contract", "internship"] | None = None,
 ):
     try:
         request.app.state.public_job_list_limiter.check("public-job-list")
@@ -630,4 +650,10 @@ def list_public_jobs(
             "Jobs are busy. Please retry shortly.",
             retry_after=error.retry_after,
         ) from None
+    if search.strip() or work_mode is not None or employment_type is not None:
+        return request.app.state.job_store.list_public(
+            page_size,
+            cursor,
+            PublicJobFilters(search=search, work_mode=work_mode, employment_type=employment_type),
+        )
     return request.app.state.job_store.list_public(page_size, cursor)

@@ -14,6 +14,8 @@ Firestore uses collections/documents, not SQL tables. Names below distinguish im
 | `resumes/{32hex_id}` | owner_uid, immutable extension/size/SHA-256, revision, parse_status, extracted/confirmed skills, skills_version, parser_version, safe error_code, private text and worker lease | Owner-only API allowlist omits text/leases; deleted IDs retain only a minimal tombstone |
 | `_resume_upload_limits/{scope_day}` | count | Atomic UTC daily upload budget per owner/global; no client access |
 | `applications/{32hex_id}` | seeker_uid/recruiter_uid, immutable job/candidate/match snapshots, revision, status/reason, submitted_at/updated_at | Unique seeker/job; verified party access and atomic audited transitions |
+| `saved_jobs/{32hex_id}` | owner_uid, job_id, saved_at | Unique owner/job bookmark; API always rechecks current visibility |
+| `_saved_job_counts/{encoded_uid}` | count | Atomic maximum 100 saved roles per seeker; server-only |
 
 `encoded_uid` means percent-encoding the opaque UID using the existing server convention, not changing identity. Never accept another owner's UID from an editable payload.
 

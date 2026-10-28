@@ -114,6 +114,7 @@ class ApiApplicationsRepository implements ApplicationsRepository {
         throw ApplicationFailure(switch (code) {
           'already_applied' =>
             'You already applied to this job. Open your applications.',
+          'saved_limit' => 'Remove a saved role before saving another.',
           'profile_required' => 'Complete your profile before applying.',
           'skills_confirmation_required' =>
             'Confirm your resume skills before matching.',

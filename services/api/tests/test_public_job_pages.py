@@ -5,7 +5,7 @@ import pytest
 from test_jobs import JOB_ID, NOW, client_for
 
 from app.errors import ApiError
-from app.jobs import FirestoreJobStore, PublicJob, PublicJobPage
+from app.jobs import FirestoreJobStore, PublicJob, PublicJobFilters, PublicJobPage
 from app.settings import Settings
 
 
@@ -59,6 +59,36 @@ def test_last_or_empty_page_has_no_continuation(monkeypatch, ids):
     store, _, _ = listing_store(monkeypatch, ids)
     page = store.list_public(2)
     assert len(page.items) == len(ids) and page.next_cursor is None
+
+
+def test_filters_keep_bounded_cursor_progress_on_empty_matching_page(monkeypatch):
+    ids = ["1" * 32, "2" * 32, "3" * 32]
+    store, _, query = listing_store(monkeypatch, ids)
+    page = store.list_public(2, filters=PublicJobFilters(search="not present"))
+    assert page.items == [] and page.next_cursor == ids[1]
+    assert store.get_public.call_count == 2
+    query.limit.assert_called_once_with(3)
+
+
+def test_search_terms_and_modes_are_combined_without_description_or_owner_leak():
+    job = PublicJob(
+        id=JOB_ID,
+        title="Flutter engineer",
+        company_name="Fixture company",
+        location="Pune",
+        description="Hidden search token",
+        required_skills=["Dart"],
+        work_mode="remote",
+        employment_type="internship",
+        published_at=NOW,
+    )
+    assert PublicJobFilters(
+        search=" DART pune ", work_mode="remote", employment_type="internship"
+    ).accepts(job)
+    assert not PublicJobFilters(search="Hidden").accepts(job)
+    assert not PublicJobFilters(search="Flutter missing").accepts(job)
+    assert not PublicJobFilters(work_mode="onsite").accepts(job)
+    assert not PublicJobFilters(employment_type="full_time").accepts(job)
 
 
 def test_query_failure_never_returns_partial_data_or_index_diagnostics(monkeypatch):

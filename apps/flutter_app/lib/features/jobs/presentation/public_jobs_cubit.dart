@@ -21,12 +21,29 @@ class PublicJobsCubit extends Cubit<PublicJobsState> {
   PublicJobsCubit(this.repository) : super(PublicJobsState());
   final PublicJobsRepository repository;
   int _generation = 0;
+  String search = '';
+  String? workMode, employmentType;
+
+  Future<void> filter({
+    required String query,
+    String? mode,
+    String? employment,
+  }) {
+    search = query.trim();
+    workMode = mode;
+    employmentType = employment;
+    return refresh();
+  }
 
   Future<void> refresh() async {
     final generation = ++_generation;
     emit(PublicJobsState(loading: true));
     try {
-      final page = await repository.page();
+      final page = await repository.page(
+        search: search,
+        workMode: workMode,
+        employmentType: employmentType,
+      );
       if (!isClosed && generation == _generation) {
         emit(PublicJobsState(items: page.items, nextCursor: page.nextCursor));
       }
@@ -46,7 +63,12 @@ class PublicJobsCubit extends Cubit<PublicJobsState> {
       PublicJobsState(items: previous, nextCursor: cursor, loadingMore: true),
     );
     try {
-      final page = await repository.page(cursor: cursor);
+      final page = await repository.page(
+        cursor: cursor,
+        search: search,
+        workMode: workMode,
+        employmentType: employmentType,
+      );
       if (!isClosed && generation == _generation) {
         final items = {
           for (final job in previous) job.id: job,

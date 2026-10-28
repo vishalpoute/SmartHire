@@ -36,9 +36,11 @@ class PublicJobDiscoveryPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Published roles from approved companies. Applications and matching are coming next.',
+                    'Published roles from approved companies. Search by role, company, location or skills.',
                   ),
                   const SizedBox(height: 24),
+                  _PublicJobFilters(cubit: cubit, busy: state.loading),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -62,7 +64,11 @@ class PublicJobDiscoveryPage extends StatelessWidget {
                         padding: const EdgeInsets.all(28),
                         child: Text(
                           state.nextCursor == null
-                              ? 'No published roles yet. Check back as companies publish opportunities.'
+                              ? (cubit.search.isNotEmpty ||
+                                        cubit.workMode != null ||
+                                        cubit.employmentType != null
+                                    ? 'No matching published roles. Try another search or reset filters.'
+                                    : 'No published roles yet. Check back as companies publish opportunities.')
                               : 'No available roles in this page. Continue to check the next page.',
                         ),
                       ),
@@ -145,10 +151,12 @@ class PublicJobDetailsPage extends StatefulWidget {
     required this.repository,
     required this.jobId,
     this.applicationsAvailable = false,
+    this.savingAvailable = false,
   });
   final PublicJobsRepository repository;
   final String jobId;
   final bool applicationsAvailable;
+  final bool savingAvailable;
   @override
   State<PublicJobDetailsPage> createState() => _PublicJobDetailsPageState();
 }
@@ -254,6 +262,12 @@ class _PublicJobDetailsPageState extends State<PublicJobDetailsPage> {
                   )
                 else
                   const Text('Applications are not available in this preview.'),
+                if (widget.savingAvailable)
+                  OutlinedButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/save/${job.id}'),
+                    child: const Text('Save role to account'),
+                  ),
               ],
             ),
           ),
@@ -268,3 +282,121 @@ String _modeLabel(PublishedWorkMode mode) => switch (mode) {
   PublishedWorkMode.hybrid => 'Hybrid',
   PublishedWorkMode.onsite => 'On-site',
 };
+
+class _PublicJobFilters extends StatefulWidget {
+  const _PublicJobFilters({required this.cubit, required this.busy});
+  final PublicJobsCubit cubit;
+  final bool busy;
+  @override
+  State<_PublicJobFilters> createState() => _PublicJobFiltersState();
+}
+
+class _PublicJobFiltersState extends State<_PublicJobFilters> {
+  final query = TextEditingController();
+  String? mode, employment;
+  @override
+  void dispose() {
+    query.dispose();
+    super.dispose();
+  }
+
+  void apply() {
+    widget.cubit.filter(query: query.text, mode: mode, employment: employment);
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      TextField(
+        controller: query,
+        maxLength: 80,
+        enabled: !widget.busy,
+        decoration: const InputDecoration(
+          labelText: 'Search published roles',
+          hintText: 'Role, company, city or skill',
+        ),
+        textInputAction: TextInputAction.search,
+        onSubmitted: (_) => apply(),
+      ),
+      Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          SizedBox(
+            width: 190,
+            child: InputDecorator(
+              decoration: const InputDecoration(labelText: 'Work mode'),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  value: mode,
+                  hint: const Text('Any work mode'),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('Any work mode'),
+                    ),
+                    for (final value in ['remote', 'hybrid', 'onsite'])
+                      DropdownMenuItem(value: value, child: Text(value)),
+                  ],
+                  onChanged: widget.busy
+                      ? null
+                      : (value) => setState(() => mode = value),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 190,
+            child: InputDecorator(
+              decoration: const InputDecoration(labelText: 'Employment'),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  value: employment,
+                  hint: const Text('Any employment'),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('Any employment'),
+                    ),
+                    for (final value in [
+                      'full_time',
+                      'part_time',
+                      'contract',
+                      'internship',
+                    ])
+                      DropdownMenuItem(
+                        value: value,
+                        child: Text(value.replaceAll('_', ' ')),
+                      ),
+                  ],
+                  onChanged: widget.busy
+                      ? null
+                      : (value) => setState(() => employment = value),
+                ),
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: widget.busy ? null : apply,
+            child: const Text('Search roles'),
+          ),
+          TextButton(
+            onPressed: widget.busy
+                ? null
+                : () {
+                    setState(() {
+                      query.clear();
+                      mode = null;
+                      employment = null;
+                    });
+                    apply();
+                  },
+            child: const Text('Reset filters'),
+          ),
+        ],
+      ),
+    ],
+  );
+}
