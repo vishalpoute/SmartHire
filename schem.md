@@ -13,6 +13,7 @@ Firestore uses collections/documents, not SQL tables. Names below distinguish im
 | `audit_events/{generated_id}` | actor/action/target metadata, reason where applicable, server timestamp | Private server writes; atomically accompanies review/publication/closure |
 | `resumes/{32hex_id}` | owner_uid, immutable extension/size/SHA-256, revision, parse_status, extracted/confirmed skills, skills_version, parser_version, safe error_code, private text and worker lease | Owner-only API allowlist omits text/leases; deleted IDs retain only a minimal tombstone |
 | `_resume_upload_limits/{scope_day}` | count | Atomic UTC daily upload budget per owner/global; no client access |
+| `applications/{32hex_id}` | seeker_uid/recruiter_uid, immutable job/candidate/match snapshots, revision, status/reason, submitted_at/updated_at | Unique seeker/job; verified party access and atomic audited transitions |
 
 `encoded_uid` means percent-encoding the opaque UID using the existing server convention, not changing identity. Never accept another owner's UID from an editable payload.
 
@@ -20,8 +21,7 @@ Firestore uses collections/documents, not SQL tables. Names below distinguish im
 
 | Collection | Data and relationship |
 | --- | --- |
-| `applications/{deterministic_id}` | job_id + seeker_uid uniqueness; recruiter_uid, immutable resume/job snapshot references, status and timestamps |
-| `match_results/{id}` | application/job/seeker references, source versions, algorithm_version, score, evidence and missing skills |
+| `match_results/{id}` | Future saved comparisons; previews currently read-only and submitted evidence embedded immutably in applications |
 | `processing_tasks/{id}` | Future generic tasks; resume processing already stores attempts/leases on its resume record |
 
 A seeker has many resumes/applications; a job has many applications; each application pins one resume version and job version. Matching results reference those exact inputs. Replacing a current resume must not change historical applications.
@@ -30,7 +30,7 @@ A seeker has many resumes/applications; a job has many applications; each applic
 
 - Server timestamps, strict field allowlists, size/type bounds and explicit lifecycle transitions; no client writes to roles, scores or audits.
 - Job lifecycle: draft → published → closed; suspended is reserved for moderation. Approval changes affect current public visibility.
-- Proposed application lifecycle: submitted → shortlisted → hired/rejected; seeker withdrawal from allowed active states. Enforce transitions transactionally.
+- Implemented application lifecycle: submitted → shortlisted/rejected; shortlisted → hired/rejected; seeker withdrawal from submitted/shortlisted. Terminal states cannot change. Transactions append audit entries atomically.
 - Use transactions/preconditions for duplicate applications and version conflicts. No implicit cascading deletion: define retention, ownership and file cleanup together before enabling deletion.
 - Keep raw resume text/private files separate from recruiter-readable application snapshots. Recruiter access must be tied to an authorized application.
 - Public pagination currently orders by document ID, not recency. Add filters/indexes only alongside tested query contracts; document required indexes in Firebase configuration.

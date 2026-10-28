@@ -144,9 +144,11 @@ class PublicJobDetailsPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.jobId,
+    this.applicationsAvailable = false,
   });
   final PublicJobsRepository repository;
   final String jobId;
+  final bool applicationsAvailable;
   @override
   State<PublicJobDetailsPage> createState() => _PublicJobDetailsPageState();
 }
@@ -244,7 +246,14 @@ class _PublicJobDetailsPageState extends State<PublicJobDetailsPage> {
                   ),
                 ],
                 const SizedBox(height: 24),
-                const Text('Applications are not available in this preview.'),
+                if (widget.applicationsAvailable)
+                  FilledButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/apply/${job.id}'),
+                    child: const Text('Review match and apply'),
+                  )
+                else
+                  const Text('Applications are not available in this preview.'),
               ],
             ),
           ),

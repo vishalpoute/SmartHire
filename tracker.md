@@ -11,7 +11,7 @@ Baseline: 21 October 2026. Target: 2 November 2026. This file records evidence, 
 | Admin recruiter review | POST deployed at API source `88853e4`; isolated transaction proof; Flutter queue/decision screen locally tested | Explicit administrator bootstrap, UI deployment and real admin acceptance |
 | Pending review queue | Pushed `330deb2`; 243 API tests, Ruff/Bandit clean; all three remote CI checks passed | Render deployment, authenticated queue acceptance and review UI |
 | Private resumes/parsing | Owner API, durable leases, explicit skill confirmation/deletion and Flutter screen implemented; 305 API tests plus two lease regressions and 150 Flutter tests pass; real storage/Firestore fixture verified | Render secret import and deployed worker, authenticated isolation and consented parser evaluation |
-| Matching/applications | Planned | Versioned evidence, snapshots, duplicate prevention and status workflows |
+| Matching/applications | Versioned coverage, immutable duplicate-safe applications, tracking/withdrawal and recruiter decisions implemented; 337 API/163 Flutter tests and real isolated Firestore checks pass | Deployment, real authenticated parties and Android journeys |
 | Moderation/deletion/final release | Partial foundations | UI, retention/cleanup contracts, Android/Web acceptance and security review |
 
 ## Deployment baseline
@@ -29,6 +29,8 @@ Required decisions/dependencies: explicit named administrator approval and real 
 Deadline risk: core resume/application/matching and cross-platform acceptance remain open. Reassess against acceptance outcomes each milestone; report slippage without removing scope silently.
 
 ## Current implementation progress
+
+- Matching/application workflows now pin job/resume/skill/parser/algorithm versions, show exact evidence/missing skills, distinguish unscored from zero coverage and require explicit submission/decisions. Duplicate application and status/audit writes are atomic. Revoked recruiter approval removes candidate access. Private originals are never shared. Isolated real Firestore ownership/query/snapshot/stale-write/revocation checks passed and fixtures were cleaned. See `docs/matching-applications.md`; hosted and authenticated acceptance remain pending.
 
 - Private resumes now include bounded selection/upload, immutable source checks, persisted worker leases/recovery, editable taxonomy suggestions, explicit skill confirmation and deletion with replay protection. Firebase tokens never go to S3. Owner isolation, stale versions, suspension races and pending cleanup have tests. Live nonpersonal S3/Firestore verification passed and cleaned its fixtures; this does not replace real authenticated HTTP acceptance. Flutter analysis, release Web build, Ruff and Bandit passed. See `docs/private-resumes.md`.
 

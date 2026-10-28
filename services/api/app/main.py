@@ -11,6 +11,8 @@ from starlette.exceptions import HTTPException
 
 from app.accounts import FirestoreAccountStore
 from app.accounts import router as account_router
+from app.applications import FirestoreApplicationStore
+from app.applications import router as application_router
 from app.auth import FirebaseTokenVerifier, Identity, require_identity
 from app.body_limit import RequestBodyLimit
 from app.companies import FirestoreCompanyStore
@@ -19,6 +21,8 @@ from app.errors import ApiError
 from app.jobs import FirestoreJobStore
 from app.jobs import public_router as public_job_router
 from app.jobs import router as job_router
+from app.matching import FirestoreMatchStore
+from app.matching import router as match_router
 from app.profiles import FirestoreProfileStore
 from app.profiles import router as profile_router
 from app.rate_limit import ProfileRateLimiter
@@ -45,6 +49,8 @@ def create_app(
     resume_store=None,
     resume_storage=None,
     resume_worker=None,
+    match_store=None,
+    application_store=None,
 ) -> FastAPI:
     settings = settings or Settings.from_environment()
 
@@ -69,6 +75,8 @@ def create_app(
     api.state.company_store = company_store or FirestoreCompanyStore(settings)
     api.state.job_store = job_store or FirestoreJobStore(settings)
     api.state.resume_store = resume_store or FirestoreResumeStore(settings)
+    api.state.match_store = match_store or FirestoreMatchStore(settings)
+    api.state.application_store = application_store or FirestoreApplicationStore(settings)
     api.state.resume_storage = resume_storage
     if resume_storage is None and settings.resume_uploads_enabled:
         try:
@@ -87,6 +95,8 @@ def create_app(
     )
     api.include_router(recruiter_review_router)
     api.include_router(resume_router)
+    api.include_router(match_router)
+    api.include_router(application_router)
     api.include_router(job_router)
     api.include_router(public_job_router)
     api.include_router(company_router)

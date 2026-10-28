@@ -10,9 +10,9 @@
 | Authentication | Firebase Authentication: Google and email/password with email verification |
 | API | Python, FastAPI, Pydantic, Firebase Admin/Firestore SDK |
 | Database | Cloud Firestore; server-controlled authorization and protected mutations |
-| Resume files | Planned private Firebase Storage; billing/setup remains a dependency |
-| Parsing | Planned bounded worker using PDF/DOCX text extraction, skill taxonomy and versioned parsing; confirm dependency/licensing choices before installation |
-| Hosting | Existing Antideploy compiled Web preview and Render FastAPI; durable worker still pending |
+| Resume files | Existing free private Antideploy S3-compatible bucket; Firebase/Firestore remain identity and metadata boundaries |
+| Parsing | Bounded isolated PDF/DOCX parser, versioned taxonomy suggestions, explicit confirmation and persisted processing leases; approved free dependencies |
+| Hosting | Existing Antideploy compiled Web preview and free Render FastAPI with in-process worker; processing pauses during free-service sleep |
 | Validation | Flutter tests/analyzer, pytest, Ruff, Bandit, dependency review and emulator/integration acceptance |
 
 ## Configuration and keys

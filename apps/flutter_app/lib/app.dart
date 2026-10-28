@@ -25,6 +25,9 @@ import 'features/recruiter_jobs/presentation/recruiter_jobs_page.dart';
 import 'features/resumes/domain/resume.dart';
 import 'features/resumes/data/api_resume_repository.dart';
 import 'features/resumes/presentation/resumes_page.dart';
+import 'features/applications/domain/application.dart';
+import 'features/applications/data/api_applications_repository.dart';
+import 'features/applications/presentation/applications_page.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/data/api_public_jobs_repository.dart';
 import 'features/jobs/domain/public_jobs_repository.dart';
@@ -45,6 +48,7 @@ class SmartHireApp extends StatelessWidget {
     this.recruiterJobsRepositoryFactory,
     this.resumeRepositoryFactory,
     this.resumePicker,
+    this.applicationsRepositoryFactory,
     this.publicJobsRepository,
   });
   final PublicJobsRepository? publicJobsRepository;
@@ -58,6 +62,37 @@ class SmartHireApp extends StatelessWidget {
   recruiterJobsRepositoryFactory;
   final ResumeRepository Function(String uid)? resumeRepositoryFactory;
   final Future<PickedResume?> Function()? resumePicker;
+  final ApplicationsRepository Function(String uid)?
+  applicationsRepositoryFactory;
+
+  ApplicationsRepository Function(String)? get _applications {
+    if (applicationsRepositoryFactory != null) {
+      return applicationsRepositoryFactory;
+    }
+    const value = String.fromEnvironment('APPLICATIONS_API_ORIGIN');
+    final origin = Uri.tryParse(value);
+    if (origin == null ||
+        origin.scheme != 'https' ||
+        origin.host.isEmpty ||
+        origin.userInfo.isNotEmpty ||
+        origin.hasQuery ||
+        origin.hasFragment ||
+        (origin.path.isNotEmpty && origin.path != '/')) {
+      return null;
+    }
+    return (uid) {
+      final session = FirebaseProfileSession(
+        FirebaseAuth.instance,
+        ownerUid: uid,
+      );
+      return ApiApplicationsRepository(
+        origin: origin,
+        ownerUid: uid,
+        session: session.read,
+        currentUid: () => session.currentUid,
+      );
+    };
+  }
 
   ResumeRepository Function(String)? get _resumes {
     if (resumeRepositoryFactory != null) return resumeRepositoryFactory;
@@ -255,13 +290,23 @@ class SmartHireApp extends StatelessWidget {
               return MaterialPageRoute<void>(
                 settings: settings,
                 builder: (context) {
+                  if (parts.length == 2 && parts.first == 'apply') {
+                    return ApplicationsPage(
+                      repositoryFactory: _applications,
+                      jobId: parts.last,
+                    );
+                  }
                   final id = parts.length == 2 && parts.first == 'jobs'
                       ? parts.last
                       : '';
                   final repository = context.read<PublicJobsRepository?>();
                   return repository == null
                       ? JobDetailsPage(jobId: id)
-                      : PublicJobDetailsPage(repository: repository, jobId: id);
+                      : PublicJobDetailsPage(
+                          repository: repository,
+                          jobId: id,
+                          applicationsAvailable: _applications != null,
+                        );
                 },
               );
             },
@@ -276,6 +321,12 @@ class SmartHireApp extends StatelessWidget {
               AppRoutes.resumes: (_) => ResumesPageView(
                 repositoryFactory: _resumes,
                 picker: resumePicker,
+              ),
+              AppRoutes.applications: (_) =>
+                  ApplicationsPage(repositoryFactory: _applications),
+              AppRoutes.recruiterApplications: (_) => ApplicationsPage(
+                repositoryFactory: _applications,
+                recruiter: true,
               ),
               AppRoutes.profileEdit: (_) =>
                   ProfileEditPage(repositoryFactory: _profiles),
