@@ -15,6 +15,38 @@ const applicationActor = AuthUser(
   emailVerified: true,
 );
 void main() {
+  testWidgets(
+    'terminal history removal requires explicit confirmation and clears snapshots',
+    (tester) async {
+      final auth = TestAuthRepository();
+      addTearDown(auth.sessions.close);
+      final repo = ApplicationsFake()
+        ..items = [
+          JobApplication(applicationJson(status: 'withdrawn', revision: 2)),
+        ];
+      await tester.pumpWidget(
+        SmartHireApp(
+          authRepository: auth,
+          initialRoute: '/applications',
+          applicationsRepositoryFactory: (_) => repo,
+        ),
+      );
+      await tester.pump();
+      auth.sessions.add(applicationActor);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Fixture role'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Remove application history'));
+      await tester.tap(find.text('Remove application history'));
+      await tester.pumpAndSettle();
+      expect(repo.items, isNotEmpty);
+      await tester.tap(find.text('Remove application'));
+      await tester.pumpAndSettle();
+      expect(repo.items, isEmpty);
+      expect(find.text('Fixture role'), findsNothing);
+      expect(find.text('Application history removed.'), findsOneWidget);
+    },
+  );
   for (final width in [360.0, 1440.0]) {
     testWidgets('explicit match review and application consent at $width', (
       tester,

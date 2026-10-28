@@ -72,6 +72,26 @@ void main() {
   });
   tearDown(() => repository.close());
   test(
+    'history deletion requires terminal state and validates removal receipt',
+    () async {
+      expect(
+        () => repository.delete(JobApplication(applicationJson())),
+        throwsA(isA<ApplicationFailure>()),
+      );
+      final value = JobApplication(
+        applicationJson(status: 'withdrawn', revision: 2),
+      );
+      adapter.overrideBody = {'id': value.id, 'status': 'deleted'};
+      await repository.delete(value);
+      expect(adapter.requests.last.data, {'expected_revision': 2});
+      adapter.overrideBody = {'id': 'd' * 32, 'status': 'deleted'};
+      await expectLater(
+        repository.delete(value),
+        throwsA(isA<ApplicationFailure>()),
+      );
+    },
+  );
+  test(
     'pins reviewed inputs and sends bearer only to the configured HTTPS API',
     () async {
       final match = await repository.match(applicationJobId, confirmedResume());

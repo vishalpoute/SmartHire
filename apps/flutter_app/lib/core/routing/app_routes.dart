@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   static const resumes = '/resumes';
   static const applications = '/applications';
   static const savedJobs = '/saved-jobs';
+  static const moderation = '/admin/moderation';
   static const recruiterApplications = '/recruiter/applications';
   static const signIn = '/sign-in';
   static const register = '/register';

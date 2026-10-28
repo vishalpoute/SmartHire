@@ -266,4 +266,22 @@ class ApiApplicationsRepository implements ApplicationsRepository {
     }
     client.close(force: true);
   }
+
+  @override
+  Future<void> delete(JobApplication application) async {
+    id(application.id);
+    if (application.active) {
+      throw const ApplicationFailure(
+        'Withdraw the active application before removing it.',
+      );
+    }
+    await request('POST', '/api/v1/applications/${application.id}/delete', (
+      json,
+    ) {
+      if (json['id'] != application.id || json['status'] != 'deleted') {
+        throw const FormatException('Invalid removal');
+      }
+      return true;
+    }, body: {'expected_revision': application.revision});
+  }
 }

@@ -37,6 +37,11 @@ class ApplicationChange(BaseModel):
         return value
 
 
+class DeleteApplication(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    expected_revision: int = Field(ge=1, le=2147483647)
+
+
 class ApplicationJob(JobDraftInput):
     id: str
     version: int
@@ -114,6 +119,9 @@ class FirestoreApplicationStore(FirestoreMatchStore):
             existing = ref.get(transaction=transaction, timeout=10, retry=None)
             if existing.exists:
                 data = existing.to_dict()
+                if data.get("status") == "deleted":
+                    self.account_record(transaction, uid)
+                    raise ApiError(409, "already_applied", "You already applied to this job.")
                 self.party(transaction, uid, data)
                 # Retrying an interrupted identical request never creates another application.
                 match = application_record(application_id, data).match
@@ -184,6 +192,37 @@ class FirestoreApplicationStore(FirestoreMatchStore):
                 "created_at": datetime.now(UTC),
             },
         )
+
+    @guarded
+    def delete_application(self, uid, application_id, command):
+        ref = self.application_collection().document(application_id)
+
+        @firestore.transactional
+        def write(transaction):
+            record = ref.get(transaction=transaction, timeout=10, retry=None)
+            if not record.exists:
+                raise ApiError(404, "application_unavailable", "This application is unavailable.")
+            data = record.to_dict()
+            if self.party(transaction, uid, data) != "seeker":
+                raise ApiError(
+                    403, "owner_required", "Only the seeker may remove this application."
+                )
+            current = application_record(application_id, data)
+            if current.revision != command.expected_revision:
+                raise ApiError(
+                    409, "application_changed", "Application changed. Refresh before retrying."
+                )
+            if current.status not in ("withdrawn", "rejected", "hired"):
+                raise ApiError(
+                    409, "withdraw_first", "Withdraw an active application before removing it."
+                )
+            transaction.set(ref, {"status": "deleted", "deleted_at": datetime.now(UTC)})
+            self.audit(
+                transaction, uid, application_id, "deleted", "Owner requested application removal"
+            )
+            return {"id": application_id, "status": "deleted"}
+
+        return write(self.client.transaction(max_attempts=1))
 
     @guarded
     def get_application(self, uid, application_id):
@@ -308,3 +347,15 @@ def change_application(
     command: ApplicationChange,
 ):
     return request.app.state.application_store.transition(identity.uid, application_id, command)
+
+
+@router.post("/applications/{application_id}/delete")
+def delete_application(
+    request: Request,
+    identity: Annotated[Identity, Depends(verified_identity)],
+    application_id: Annotated[str, Path(pattern=ID_PATTERN)],
+    command: DeleteApplication,
+):
+    return request.app.state.application_store.delete_application(
+        identity.uid, application_id, command
+    )

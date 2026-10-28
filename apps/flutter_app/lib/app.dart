@@ -31,6 +31,9 @@ import 'features/applications/presentation/applications_page.dart';
 import 'features/saved_jobs/domain/saved_job.dart';
 import 'features/saved_jobs/data/api_saved_jobs_repository.dart';
 import 'features/saved_jobs/presentation/saved_jobs_page.dart';
+import 'features/moderation/domain/moderation.dart';
+import 'features/moderation/data/api_moderation_repository.dart';
+import 'features/moderation/presentation/moderation_page.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/data/api_public_jobs_repository.dart';
 import 'features/jobs/domain/public_jobs_repository.dart';
@@ -53,6 +56,7 @@ class SmartHireApp extends StatelessWidget {
     this.resumePicker,
     this.applicationsRepositoryFactory,
     this.savedJobsRepositoryFactory,
+    this.moderationRepositoryFactory,
     this.publicJobsRepository,
   });
   final PublicJobsRepository? publicJobsRepository;
@@ -69,6 +73,34 @@ class SmartHireApp extends StatelessWidget {
   final ApplicationsRepository Function(String uid)?
   applicationsRepositoryFactory;
   final SavedJobsRepository Function(String uid)? savedJobsRepositoryFactory;
+  final ModerationRepository Function(String uid)? moderationRepositoryFactory;
+
+  ModerationRepository Function(String)? get _moderation {
+    if (moderationRepositoryFactory != null) return moderationRepositoryFactory;
+    const value = String.fromEnvironment('MODERATION_API_ORIGIN');
+    final origin = Uri.tryParse(value);
+    if (origin == null ||
+        origin.scheme != 'https' ||
+        origin.host.isEmpty ||
+        origin.userInfo.isNotEmpty ||
+        origin.hasQuery ||
+        origin.hasFragment ||
+        (origin.path.isNotEmpty && origin.path != '/')) {
+      return null;
+    }
+    return (uid) {
+      final session = FirebaseProfileSession(
+        FirebaseAuth.instance,
+        ownerUid: uid,
+      );
+      return ApiModerationRepository(
+        origin: origin,
+        ownerUid: uid,
+        session: session.read,
+        currentUid: () => session.currentUid,
+      );
+    };
+  }
 
   SavedJobsRepository Function(String)? get _savedJobs {
     if (savedJobsRepositoryFactory != null) return savedJobsRepositoryFactory;
@@ -365,6 +397,8 @@ class SmartHireApp extends StatelessWidget {
                   ApplicationsPage(repositoryFactory: _applications),
               AppRoutes.savedJobs: (_) =>
                   SavedJobsPage(repositoryFactory: _savedJobs),
+              AppRoutes.moderation: (_) =>
+                  ModerationPage(repositoryFactory: _moderation),
               AppRoutes.recruiterApplications: (_) => ApplicationsPage(
                 repositoryFactory: _applications,
                 recruiter: true,

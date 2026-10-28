@@ -23,6 +23,8 @@ from app.jobs import public_router as public_job_router
 from app.jobs import router as job_router
 from app.matching import FirestoreMatchStore
 from app.matching import router as match_router
+from app.moderation import FirestoreModerationStore
+from app.moderation import router as moderation_router
 from app.profiles import FirestoreProfileStore
 from app.profiles import router as profile_router
 from app.rate_limit import ProfileRateLimiter
@@ -54,6 +56,7 @@ def create_app(
     match_store=None,
     application_store=None,
     saved_job_store=None,
+    moderation_store=None,
 ) -> FastAPI:
     settings = settings or Settings.from_environment()
 
@@ -81,6 +84,7 @@ def create_app(
     api.state.match_store = match_store or FirestoreMatchStore(settings)
     api.state.application_store = application_store or FirestoreApplicationStore(settings)
     api.state.saved_job_store = saved_job_store or FirestoreSavedJobStore(settings)
+    api.state.moderation_store = moderation_store or FirestoreModerationStore(settings)
     api.state.resume_storage = resume_storage
     if resume_storage is None and settings.resume_uploads_enabled:
         try:
@@ -102,6 +106,7 @@ def create_app(
     api.include_router(match_router)
     api.include_router(application_router)
     api.include_router(saved_job_router)
+    api.include_router(moderation_router)
     api.include_router(job_router)
     api.include_router(public_job_router)
     api.include_router(company_router)

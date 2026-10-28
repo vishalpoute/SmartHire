@@ -12,7 +12,7 @@ Baseline: 21 October 2026. Target: 2 November 2026. This file records evidence, 
 | Pending review queue | Pushed `330deb2`; 243 API tests, Ruff/Bandit clean; all three remote CI checks passed | Render deployment, authenticated queue acceptance and review UI |
 | Private resumes/parsing | Owner API, durable leases, explicit skill confirmation/deletion and Flutter screen implemented; 305 API tests plus two lease regressions and 150 Flutter tests pass; real storage/Firestore fixture verified | Render secret import and deployed worker, authenticated isolation and consented parser evaluation |
 | Matching/applications | Versioned coverage, immutable duplicate-safe applications, tracking/withdrawal and recruiter decisions implemented; 337 API/163 Flutter tests and real isolated Firestore checks pass | Deployment, real authenticated parties and Android journeys |
-| Moderation/deletion/final release | Partial foundations | UI, retention/cleanup contracts, Android/Web acceptance and security review |
+| Moderation/deletion/final release | Admin moderation/audit and terminal history removal implemented; 353 API/177 Flutter tests, analysis/Ruff/Bandit/Web build and isolated live Firestore checks pass | Deployment, real administrator/Android/Web acceptance, parser evaluation and security review |
 
 ## Deployment baseline
 
@@ -29,6 +29,8 @@ Required decisions/dependencies: explicit named administrator approval and real 
 Deadline risk: core resume/application/matching and cross-platform acceptance remain open. Reassess against acceptance outcomes each milestone; report slippage without removing scope silently.
 
 ## Current implementation progress
+
+- Admin moderation now provides bounded published/suspended listings, reasoned versioned suspension/restore-to-draft and allowlisted audit inspection. Every request rechecks server-owned administrator access. Terminal application history may be removed by its seeker with explicit confirmation; snapshots and party identifiers are erased, replay markers and accountability audits retained, and original resumes remain separate. Real administrator bootstrap remains unperformed. See `docs/moderation-audit.md` and `docs/matching-applications.md`.
 
 - Discovery now submits search/work-mode/employment filters to the real API with bounded sparse-page continuation and stale-query fencing. Saved roles persist under server-selected ownership with idempotent save/remove, an atomic 100-role limit and safe unavailable-job placeholders. Real Firestore bookmark isolation/removal passed with cleanup. See `docs/discovery-saved-jobs.md`.
 

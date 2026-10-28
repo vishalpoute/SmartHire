@@ -217,3 +217,75 @@ def test_transaction_rechecks_seeker_suspension(monkeypatch):
     with pytest.raises(ApiError) as error:
         bundle.applications.submit("one", JOB_ID, ApplyInput(**command(expected_job_version=2)))
     assert error.value.status == 403
+
+
+def test_terminal_application_removal_clears_snapshots_and_prevents_reapplication(monkeypatch):
+    bundle = applications_fixture(monkeypatch)
+    value = submit(bundle).json()
+    path = f"/api/v1/applications/{value['id']}"
+    assert (
+        bundle.client.post(
+            path + "/delete", headers=HEADERS, json={"expected_revision": 1}
+        ).status_code
+        == 409
+    )
+    assert (
+        bundle.client.post(
+            path + "/status", headers=HEADERS, json={"expected_revision": 1, "status": "withdrawn"}
+        ).status_code
+        == 200
+    )
+    assert (
+        bundle.client.post(
+            path + "/delete", headers=HEADERS, json={"expected_revision": 1}
+        ).status_code
+        == 409
+    )
+    assert (
+        bundle.client.post(
+            path + "/delete", headers={"Authorization": "Bearer two"}, json={"expected_revision": 2}
+        ).status_code
+        == 404
+    )
+    result = bundle.client.post(path + "/delete", headers=HEADERS, json={"expected_revision": 2})
+    assert result.json() == {"id": value["id"], "status": "deleted"}
+    data = bundle.database.data[("applications", value["id"])]
+    assert set(data) == {"status", "deleted_at"}
+    assert bundle.client.get(path, headers=HEADERS).status_code == 404
+    assert bundle.client.get("/api/v1/applications", headers=HEADERS).json()["items"] == []
+    assert submit(bundle).status_code == 409
+    assert ("resumes", RESUME_ID) in bundle.database.data
+
+
+def test_recruiter_cannot_erase_candidate_application(monkeypatch):
+    from app.applications import DeleteApplication
+
+    bundle = applications_fixture(monkeypatch)
+    value = submit(bundle).json()
+    with pytest.raises(ApiError) as error:
+        bundle.applications.delete_application(
+            "recruiter", value["id"], DeleteApplication(expected_revision=1)
+        )
+    assert error.value.status == 403
+    assert bundle.applications.get_application("one", value["id"]).status == "submitted"
+
+
+def test_removal_audit_failure_preserves_snapshot(monkeypatch):
+    from app.applications import ApplicationChange, DeleteApplication
+
+    bundle = applications_fixture(monkeypatch)
+    value = submit(bundle).json()
+    bundle.applications.transition(
+        "one", value["id"], ApplicationChange(expected_revision=1, status="withdrawn")
+    )
+    before = copy.deepcopy(bundle.database.data)
+
+    def fail(*args):
+        raise RuntimeError("Fixture audit failure")
+
+    monkeypatch.setattr(bundle.applications, "audit", fail)
+    with pytest.raises(ApiError):
+        bundle.applications.delete_application(
+            "one", value["id"], DeleteApplication(expected_revision=2)
+        )
+    assert bundle.database.data == before

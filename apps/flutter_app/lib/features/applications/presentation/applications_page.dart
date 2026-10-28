@@ -297,6 +297,41 @@ class _WorkspaceState extends State<_Workspace> {
     ],
   );
 
+  Future<void> remove(JobApplication application) async {
+    if (busy || stale || application.active) return;
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove application history?'),
+        content: const Text(
+          'Remove this application and its profile, skill and match snapshots from both parties’ views. This is permanent and you cannot reapply to the same job. Your private resume remains separate. A minimal deletion marker and accountability audit remain.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove application'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || accepted != true) return;
+    await run((token) async {
+      await repository.delete(application);
+      if (mounted && token == generation) {
+        setState(() {
+          applications = applications
+              .where((row) => row.id != application.id)
+              .toList();
+          message = 'Application history removed.';
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) => Align(
     alignment: Alignment.topCenter,
@@ -431,6 +466,13 @@ class _WorkspaceState extends State<_Workspace> {
                                 ? null
                                 : () => change(application, 'withdrawn'),
                             child: const Text('Withdraw'),
+                          ),
+                        if (!widget.recruiter && !application.active)
+                          OutlinedButton(
+                            onPressed: busy || stale
+                                ? null
+                                : () => remove(application),
+                            child: const Text('Remove application history'),
                           ),
                         if (widget.recruiter &&
                             application.status == 'submitted')

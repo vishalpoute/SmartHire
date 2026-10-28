@@ -113,4 +113,9 @@ class ApplicationsFake implements ApplicationsRepository {
   void close() {
     closed = true;
   }
+
+  @override
+  Future<void> delete(JobApplication application) async {
+    items = [];
+  }
 }

@@ -200,5 +200,6 @@ abstract interface class ApplicationsRepository {
     String status,
     String reason,
   );
+  Future<void> delete(JobApplication application);
   void close();
 }

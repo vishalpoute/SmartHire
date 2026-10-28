@@ -77,6 +77,9 @@ class Collection:
         assert filter.op_string == "=="
         return Query(self.database, self.name, filter)
 
+    def order_by(self, field):
+        return Query(self.database, self.name).order_by(field)
+
 
 class Transaction:
     def __init__(self, database):
