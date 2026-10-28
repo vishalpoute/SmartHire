@@ -5,7 +5,9 @@ version: 0.1.0+1
 environment:
   sdk: ^3.13.2
 dependencies:
+  crypto: 3.0.8
   dio: ^5.11.1
+  file_picker: 13.3.0
   firebase_auth: ^6.7.0
   firebase_core: ^4.15.0
   flutter:

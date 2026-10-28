@@ -22,6 +22,9 @@ import 'features/recruiter_review/presentation/recruiter_review_page.dart';
 import 'features/recruiter_jobs/domain/recruiter_job.dart';
 import 'features/recruiter_jobs/data/api_recruiter_jobs_repository.dart';
 import 'features/recruiter_jobs/presentation/recruiter_jobs_page.dart';
+import 'features/resumes/domain/resume.dart';
+import 'features/resumes/data/api_resume_repository.dart';
+import 'features/resumes/presentation/resumes_page.dart';
 import 'features/jobs/data/demo_job_repository.dart';
 import 'features/jobs/data/api_public_jobs_repository.dart';
 import 'features/jobs/domain/public_jobs_repository.dart';
@@ -40,6 +43,8 @@ class SmartHireApp extends StatelessWidget {
     this.companyRepositoryFactory,
     this.reviewRepositoryFactory,
     this.recruiterJobsRepositoryFactory,
+    this.resumeRepositoryFactory,
+    this.resumePicker,
     this.publicJobsRepository,
   });
   final PublicJobsRepository? publicJobsRepository;
@@ -51,6 +56,39 @@ class SmartHireApp extends StatelessWidget {
   final RecruiterReviewRepository Function(String uid)? reviewRepositoryFactory;
   final RecruiterJobsRepository Function(String uid)?
   recruiterJobsRepositoryFactory;
+  final ResumeRepository Function(String uid)? resumeRepositoryFactory;
+  final Future<PickedResume?> Function()? resumePicker;
+
+  ResumeRepository Function(String)? get _resumes {
+    if (resumeRepositoryFactory != null) return resumeRepositoryFactory;
+    const origin = String.fromEnvironment('RESUME_API_ORIGIN');
+    const storageOrigin = String.fromEnvironment('RESUME_STORAGE_ORIGIN');
+    final api = Uri.tryParse(origin), storage = Uri.tryParse(storageOrigin);
+    for (final uri in [api, storage]) {
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          uri.host.isEmpty ||
+          uri.userInfo.isNotEmpty ||
+          uri.hasQuery ||
+          uri.hasFragment ||
+          (uri.path.isNotEmpty && uri.path != '/')) {
+        return null;
+      }
+    }
+    return (uid) {
+      final session = FirebaseProfileSession(
+        FirebaseAuth.instance,
+        ownerUid: uid,
+      );
+      return ApiResumeRepository(
+        origin: api!,
+        storageOrigin: storage!,
+        ownerUid: uid,
+        session: session.read,
+        currentUid: () => session.currentUid,
+      );
+    };
+  }
 
   RecruiterJobsRepository Function(String)? get _recruiterJobs {
     if (recruiterJobsRepositoryFactory != null) {
@@ -235,6 +273,10 @@ class SmartHireApp extends StatelessWidget {
                   RecruiterReviewPage(repositoryFactory: _reviews),
               AppRoutes.recruiterJobs: (_) =>
                   RecruiterJobsPage(repositoryFactory: _recruiterJobs),
+              AppRoutes.resumes: (_) => ResumesPageView(
+                repositoryFactory: _resumes,
+                picker: resumePicker,
+              ),
               AppRoutes.profileEdit: (_) =>
                   ProfileEditPage(repositoryFactory: _profiles),
               AppRoutes.discover: (context) {

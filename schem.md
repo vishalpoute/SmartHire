@@ -11,6 +11,8 @@ Firestore uses collections/documents, not SQL tables. Names below distinguish im
 | `company_profiles/{encoded_uid}` | name, description, location, website, approval_status, updated_at | One owned company profile per UID in current MVP; edits reset approval |
 | `jobs/{32hex_id}` | recruiter_uid, company_owner_uid, title, description, location, work_mode, employment_type, required_skills, preferred_skills, status, version, timestamps, published company_name | Many jobs per recruiter/company; public API returns an allowlist only |
 | `audit_events/{generated_id}` | actor/action/target metadata, reason where applicable, server timestamp | Private server writes; atomically accompanies review/publication/closure |
+| `resumes/{32hex_id}` | owner_uid, immutable extension/size/SHA-256, revision, parse_status, extracted/confirmed skills, skills_version, parser_version, safe error_code, private text and worker lease | Owner-only API allowlist omits text/leases; deleted IDs retain only a minimal tombstone |
+| `_resume_upload_limits/{scope_day}` | count | Atomic UTC daily upload budget per owner/global; no client access |
 
 `encoded_uid` means percent-encoding the opaque UID using the existing server convention, not changing identity. Never accept another owner's UID from an editable payload.
 
@@ -18,10 +20,9 @@ Firestore uses collections/documents, not SQL tables. Names below distinguish im
 
 | Collection | Data and relationship |
 | --- | --- |
-| `resumes/{id}` | owner_uid, private storage_path, hash, immutable version, parse_status, extracted/confirmed skills, parser_version, safe error_code; many per seeker |
 | `applications/{deterministic_id}` | job_id + seeker_uid uniqueness; recruiter_uid, immutable resume/job snapshot references, status and timestamps |
 | `match_results/{id}` | application/job/seeker references, source versions, algorithm_version, score, evidence and missing skills |
-| `processing_tasks/{id}` | owner/resource reference, kind, status, attempts, retry time, lease expiry and safe failure code |
+| `processing_tasks/{id}` | Future generic tasks; resume processing already stores attempts/leases on its resume record |
 
 A seeker has many resumes/applications; a job has many applications; each application pins one resume version and job version. Matching results reference those exact inputs. Replacing a current resume must not change historical applications.
 

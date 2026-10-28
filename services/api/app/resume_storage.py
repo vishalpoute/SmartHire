@@ -152,7 +152,23 @@ class S3ResumeStorage:
             if body is not None:
                 body.close()
 
+    def erase(self, owner_uid, resume_id, extension):
+        """Erase content but reserve the key so an old create-only upload cannot resurrect it."""
+        key = self.key(owner_uid, resume_id, extension)
+        try:
+            self.client.put_object(
+                Bucket=self.bucket,
+                Key=key,
+                Body=b"",
+                ContentLength=0,
+                ContentType="application/octet-stream",
+                Metadata={"deleted": "true"},
+            )
+        except Exception:  # noqa: BLE001 - no credential or object diagnostics.
+            raise ResumeStorageFailure() from None
+
     def delete(self, owner_uid, resume_id, extension):
+        """Physical object cleanup for isolated fixtures; owner deletion uses erase()."""
         key = self.key(owner_uid, resume_id, extension)
         try:
             self.client.delete_object(Bucket=self.bucket, Key=key)

@@ -94,3 +94,13 @@ def test_sdk_diagnostics_are_private_and_delete_is_owner_scoped():
     client.delete_object.assert_called_once_with(
         Bucket="private-fixture", Key=store.key(OWNER, RESUME, "pdf")
     )
+
+
+def test_erasure_removes_content_but_reserves_create_only_object_key():
+    store, client = storage()
+    store.erase(OWNER, RESUME, "pdf")
+    options = client.put_object.call_args.kwargs
+    assert options["Key"] == store.key(OWNER, RESUME, "pdf")
+    assert options["Body"] == b"" and options["ContentLength"] == 0
+    assert options["Metadata"] == {"deleted": "true"}
+    client.delete_object.assert_not_called()

@@ -13,7 +13,7 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-PARSER_VERSION = "text-v1-pypdf6.21.2-docx1.2.0"
+PARSER_VERSION = "text-v2-pypdf6.21.2-docx1.2.0"
 MAX_BYTES = 5 * 1024 * 1024
 MAX_TEXT = 100_000
 MAX_PAGES = 20
@@ -153,7 +153,7 @@ def _child_main():
             import resource
 
             resource.setrlimit(resource.RLIMIT_CPU, (8, 8))
-            resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
+            resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024, 256 * 1024 * 1024))
         data = sys.stdin.buffer.read(MAX_BYTES + 1)
         if not data or len(data) > MAX_BYTES:
             raise Rejected("size_limit")

@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -23,6 +24,10 @@ from app.profiles import router as profile_router
 from app.rate_limit import ProfileRateLimiter
 from app.recruiter_review import FirestoreRecruiterReviewStore
 from app.recruiter_review import router as recruiter_review_router
+from app.resume_storage import ResumeStorageFailure, S3ResumeStorage
+from app.resume_store import FirestoreResumeStore
+from app.resume_worker import ResumeWorker
+from app.resumes import router as resume_router
 from app.settings import Settings
 
 logger = logging.getLogger("smarthire.api")
@@ -37,9 +42,24 @@ def create_app(
     company_store=None,
     job_store=None,
     recruiter_review_store=None,
+    resume_store=None,
+    resume_storage=None,
+    resume_worker=None,
 ) -> FastAPI:
     settings = settings or Settings.from_environment()
-    api = FastAPI(title="SmartHire API", version="0.1.0")
+
+    @asynccontextmanager
+    async def lifespan(api):
+        worker = api.state.resume_worker
+        if worker is not None:
+            worker.start()
+        try:
+            yield
+        finally:
+            if worker is not None:
+                worker.stop()
+
+    api = FastAPI(title="SmartHire API", version="0.1.0", lifespan=lifespan)
     api.state.token_verifier = token_verifier or FirebaseTokenVerifier(settings)
     api.state.profile_limiter = ProfileRateLimiter()
     api.state.public_job_limiter = ProfileRateLimiter(limit=120, max_accounts=1)
@@ -48,10 +68,25 @@ def create_app(
     api.state.account_store = account_store or FirestoreAccountStore(settings)
     api.state.company_store = company_store or FirestoreCompanyStore(settings)
     api.state.job_store = job_store or FirestoreJobStore(settings)
+    api.state.resume_store = resume_store or FirestoreResumeStore(settings)
+    api.state.resume_storage = resume_storage
+    if resume_storage is None and settings.resume_uploads_enabled:
+        try:
+            api.state.resume_storage = S3ResumeStorage.from_environment()
+        except ResumeStorageFailure:
+            logger.warning("resume_storage_not_configured")
+    api.state.resume_worker = resume_worker
+    if (
+        resume_worker is None
+        and settings.resume_worker_enabled
+        and api.state.resume_storage is not None
+    ):
+        api.state.resume_worker = ResumeWorker(api.state.resume_store, api.state.resume_storage)
     api.state.recruiter_review_store = recruiter_review_store or FirestoreRecruiterReviewStore(
         settings
     )
     api.include_router(recruiter_review_router)
+    api.include_router(resume_router)
     api.include_router(job_router)
     api.include_router(public_job_router)
     api.include_router(company_router)

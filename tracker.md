@@ -10,26 +10,27 @@ Baseline: 21 October 2026. Target: 2 November 2026. This file records evidence, 
 | Public discovery/detail | Frontend `0f70596` deployed; 77 Flutter tests at that milestone; actual empty API-backed state verified | Live filtering/saving and populated-job acceptance |
 | Admin recruiter review | POST deployed at API source `88853e4`; isolated transaction proof; Flutter queue/decision screen locally tested | Explicit administrator bootstrap, UI deployment and real admin acceptance |
 | Pending review queue | Pushed `330deb2`; 243 API tests, Ruff/Bandit clean; all three remote CI checks passed | Render deployment, authenticated queue acceptance and review UI |
-| Private resumes/parsing | Free private bucket and bounded offline parser/storage adapters verified with nonpersonal fixtures; 282 API tests pass | Owner API/UI, durable worker integration, authenticated isolation and consented parser evaluation |
+| Private resumes/parsing | Owner API, durable leases, explicit skill confirmation/deletion and Flutter screen implemented; 305 API tests plus two lease regressions and 150 Flutter tests pass; real storage/Firestore fixture verified | Render secret import and deployed worker, authenticated isolation and consented parser evaluation |
 | Matching/applications | Planned | Versioned evidence, snapshots, duplicate prevention and status workflows |
 | Moderation/deletion/final release | Partial foundations | UI, retention/cleanup contracts, Android/Web acceptance and security review |
 
 ## Deployment baseline
 
 - Preview: https://smarthire-vishalpoute.antideploy.app — frontend source `d6592f6dc359e8a45154152206b13d41987bab42`; actual index, versioned bootstrap and main JavaScript SHA-256 hashes matched on 28 October. Authenticated feature origins remain absent pending real acceptance.
-- API: https://smarthire-api-ep83.onrender.com — last verified source `88853e484449f3361abd82415949cddc8875302e`.
-- Queue source `330deb2f5d5590e97d58453230da72fd4672180d` is pushed but not verified deployed: Render browser navigation repeatedly timed out. Preserve the pushed work and retry hosting independently.
+- API: https://smarthire-api-ep83.onrender.com — verified source `d6592f6dc359e8a45154152206b13d41987bab42`, Render deploy `dep-dbgnk36gekts738e3jjg` live. OpenAPI verified owned job listing and review queue. A later CORS request timed out; it is not evidence of resume deployment.
 - Known preview scanner result: one low missing-security-headers finding; do not describe the release as finding-free.
 
 ## Priority and blockers
 
-Next: deploy the queue, then complete authenticated profile/isolation acceptance and company/recruiter UI. Independent implementation can continue while browser-only acceptance is blocked; do not enable gated saving prematurely.
+Next: deploy the resume workflow after CI and private secret import; implement matching/applications and finish authenticated profile/isolation acceptance. Independent implementation can continue while browser-only acceptance is blocked; do not enable gated saving prematurely.
 
-Required decisions/dependencies: explicit approval before real admin role assignment; private Storage billing/configuration and durable worker hosting; real authenticated acceptance access. Google popup limitations in the automated browser are not evidence of login failure or persistence success.
+Required decisions/dependencies: explicit named administrator approval and real authenticated acceptance access. Free private storage is provisioned; secrets require secure import into the existing free Render service. Its in-process worker persists leases but pauses during free-service sleep. Google popup limitations in the automated browser are not evidence of login failure or persistence success.
 
 Deadline risk: core resume/application/matching and cross-platform acceptance remain open. Reassess against acceptance outcomes each milestone; report slippage without removing scope silently.
 
 ## Current implementation progress
+
+- Private resumes now include bounded selection/upload, immutable source checks, persisted worker leases/recovery, editable taxonomy suggestions, explicit skill confirmation and deletion with replay protection. Firebase tokens never go to S3. Owner isolation, stale versions, suspension races and pending cleanup have tests. Live nonpersonal S3/Firestore verification passed and cleaned its fixtures; this does not replace real authenticated HTTP acceptance. Flutter analysis, release Web build, Ruff and Bandit passed. See `docs/private-resumes.md`.
 
 - Company onboarding now includes the owner-bound API adapter, verified-session route, editable company form, validation, retry, pending-review receipts, unsaved-change protection and session reset. On 27 October, all 95 Flutter tests passed (including 18 focused company checks), full Flutter analysis was clean and diff whitespace checks passed. Live owner write/readback and two-account isolation remain unverified; hosted saving remains gated. This milestone has not been deployed.
 - The eight root specifications now guide implementation alongside the detailed existing contracts.
